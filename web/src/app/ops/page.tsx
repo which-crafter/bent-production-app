@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { Lead, Project, LeadRow, ProjectRow, LeadStatus, ProjectStatus } from "./types";
+import { ConvertLeadForm } from "./_components/ConvertLeadForm";
 
 function getStatusColor(status: LeadStatus | ProjectStatus): string {
   switch (status) {
@@ -114,7 +115,7 @@ export default async function OpsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                         Source
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider min-w-[400px]">
                         Action
                       </th>
                     </tr>
@@ -143,17 +144,17 @@ export default async function OpsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
                           {lead.source || "-"}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            disabled={lead.status !== "qualified"}
-                            className={`px-3 py-1 text-xs font-medium rounded ${
-                              lead.status === "qualified"
-                                ? "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-600"
-                                : "bg-zinc-300 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
-                            }`}
-                          >
-                            Convert to Project
-                          </button>
+                        <td className="px-6 py-4">
+                          {lead.status === "qualified" ? (
+                            <ConvertLeadForm leadId={lead.id} />
+                          ) : (
+                            <button
+                              disabled
+                              className="px-3 py-1 text-xs font-medium rounded bg-zinc-300 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
+                            >
+                              Convert to Project
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
