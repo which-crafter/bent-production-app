@@ -20,7 +20,10 @@ function isStale(updatedAt: string): boolean {
 export function LeadsTable({ leads, projects }: LeadsTableProps) {
   const [showStale, setShowStale] = useState(false);
   const [showConverted, setShowConverted] = useState(false);
-  const [showLost, setShowLost] = useState(false);
+  // Default: new + contacted checked (active leads)
+  const [checkedStatuses, setCheckedStatuses] = useState<Set<LeadStatus>>(
+    new Set(["new", "contacted"])
+  );
 
   // Create a map of lead_id -> project for quick lookup
   const leadToProjectMap = new Map<string, Project>();
@@ -28,33 +31,40 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
     leadToProjectMap.set(project.leadId, project);
   });
 
+  function handleStatusChange(status: LeadStatus, checked: boolean) {
+    setCheckedStatuses((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(status);
+      } else {
+        next.delete(status);
+      }
+      return next;
+    });
+  }
+
   // Filter leads based on criteria
   const filteredLeads = leads.filter((lead) => {
     const isConverted = leadToProjectMap.has(lead.id);
     const isLeadStale = isStale(lead.updatedAt);
-    const isActiveStatus = ["new", "contacted", "qualified"].includes(lead.status);
-    const isLost = lead.status === "lost";
 
-    // If "Show lost" is checked, include all lost leads
-    if (showLost && isLost) {
-      return true;
+    // Must have checked status
+    if (!checkedStatuses.has(lead.status)) {
+      return false;
     }
 
-    // Default filter: active status, not converted, not stale
-    const passesDefault = isActiveStatus && !isConverted && !isLeadStale;
-
-    // If "Show stale" is checked, include all stale leads
-    if (showStale && isLeadStale) {
-      return true;
+    // Apply stale filter: if not showing stale, exclude stale leads
+    if (!showStale && isLeadStale) {
+      return false;
     }
 
-    // If "Show converted" is checked, include all converted leads
-    if (showConverted && isConverted) {
-      return true;
+    // Apply converted filter: if not showing converted, exclude converted leads
+    if (!showConverted && isConverted) {
+      return false;
     }
 
-    // Otherwise, apply default filter
-    return passesDefault;
+    // Passes all filters
+    return true;
   });
 
   return (
@@ -62,10 +72,10 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
       <LeadFilters
         showStale={showStale}
         showConverted={showConverted}
-        showLost={showLost}
+        checkedStatuses={checkedStatuses}
         onShowStaleChange={setShowStale}
         onShowConvertedChange={setShowConverted}
-        onShowLostChange={setShowLost}
+        onStatusChange={handleStatusChange}
       />
       <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
         {filteredLeads.length === 0 ? (
