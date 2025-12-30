@@ -9,6 +9,8 @@ export interface LeadRow {
   status: LeadStatus;
   source: string | null;
   updated_at: string;
+  last_contacted_at: string | null;
+  last_contact_note: string | null;
 }
 
 export interface ProjectRow {
@@ -28,6 +30,8 @@ export interface Lead {
   status: LeadStatus;
   source?: string;
   updatedAt: string;
+  lastContactedAt?: string;
+  lastContactNote?: string;
 }
 
 export interface Project {

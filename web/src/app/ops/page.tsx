@@ -39,6 +39,8 @@ function transformLeadRow(row: LeadRow): Lead {
     status: row.status,
     source: row.source || undefined,
     updatedAt: row.updated_at,
+    lastContactedAt: row.last_contacted_at || undefined,
+    lastContactNote: row.last_contact_note || undefined,
   };
 }
 
@@ -57,7 +59,7 @@ export default async function OpsPage() {
   // Fetch leads
   const { data: leadsData, error: leadsError } = await supabase
     .from("leads")
-    .select("id, name, company_or_client, status, source, updated_at");
+    .select("id, name, company_or_client, status, source, updated_at, last_contacted_at, last_contact_note");
 
   // Fetch projects
   const { data: projectsData, error: projectsError } = await supabase

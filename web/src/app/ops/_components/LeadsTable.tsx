@@ -5,6 +5,7 @@ import type { Lead, Project, LeadStatus } from "../types";
 import { ConvertLeadForm } from "./ConvertLeadForm";
 import { LeadFilters } from "./LeadFilters";
 import { StatusSelect } from "./StatusSelect";
+import { LogContact } from "./LogContact";
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -15,6 +16,35 @@ function isStale(updatedAt: string): boolean {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   return new Date(updatedAt) < thirtyDaysAgo;
+}
+
+function formatLastContacted(lastContactedAt?: string): string {
+  if (!lastContactedAt) {
+    return "—";
+  }
+
+  const date = new Date(lastContactedAt);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHours === 0) {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return diffMinutes <= 1 ? "just now" : `${diffMinutes}m ago`;
+    }
+    return `${diffHours}h ago`;
+  } else if (diffDays === 1) {
+    return "yesterday";
+  } else if (diffDays < 7) {
+    return `${diffDays}d ago`;
+  } else if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `${weeks}w ago`;
+  } else {
+    return date.toLocaleDateString();
+  }
 }
 
 export function LeadsTable({ leads, projects }: LeadsTableProps) {
@@ -43,9 +73,12 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
     });
   }
 
-  // Filter leads based on criteria
-  const filteredLeads = leads.filter((lead) => {
-    const isConverted = leadToProjectMap.has(lead.id);
+  // Separate converted and unconverted leads
+  const convertedLeads = leads.filter((lead) => leadToProjectMap.has(lead.id));
+  const unconvertedLeads = leads.filter((lead) => !leadToProjectMap.has(lead.id));
+
+  // Filter unconverted leads based on criteria
+  const filteredUnconvertedLeads = unconvertedLeads.filter((lead) => {
     const isLeadStale = isStale(lead.updatedAt);
 
     // Must have checked status
@@ -58,14 +91,78 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
       return false;
     }
 
-    // Apply converted filter: if not showing converted, exclude converted leads
-    if (!showConverted && isConverted) {
-      return false;
-    }
-
     // Passes all filters
     return true;
   });
+
+  function renderLeadRow(lead: Lead, showProjectCode: boolean = false) {
+    const existingProject = leadToProjectMap.get(lead.id);
+    const isLeadStale = isStale(lead.updatedAt);
+
+    return (
+      <tr key={lead.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800">
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-black dark:text-zinc-50">
+          {lead.name}
+          {showProjectCode && existingProject && (
+            <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+              → {existingProject.projectCode}
+            </span>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
+          {lead.companyOrClient}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <StatusSelect leadId={lead.id} currentStatus={lead.status} />
+            {isLeadStale && (
+              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                Stale
+              </span>
+            )}
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
+          {lead.source || "-"}
+        </td>
+        <td className="px-6 py-4">
+          <div className="space-y-1">
+            <div className="text-xs text-zinc-600 dark:text-zinc-400">
+              Last contacted: {formatLastContacted(lead.lastContactedAt)}
+            </div>
+            {lead.lastContactNote && (
+              <div className="text-xs text-zinc-500 dark:text-zinc-500 italic whitespace-pre-line">
+                {lead.lastContactNote}
+              </div>
+            )}
+            <LogContact leadId={lead.id} currentNote={lead.lastContactNote} />
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          {existingProject ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-zinc-600 dark:text-zinc-400">Converted →</span>
+              <a
+                href={`#project-${existingProject.id}`}
+                className="font-mono text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {existingProject.projectCode}
+              </a>
+            </div>
+          ) : lead.status === "qualified" ? (
+            <ConvertLeadForm leadId={lead.id} />
+          ) : (
+            <button
+              disabled
+              className="px-3 py-1 text-xs font-medium rounded bg-zinc-300 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
+            >
+              Convert to Project
+            </button>
+          )}
+        </td>
+      </tr>
+    );
+  }
 
   return (
     <>
@@ -77,93 +174,89 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
         onShowConvertedChange={setShowConverted}
         onStatusChange={handleStatusChange}
       />
-      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        {filteredLeads.length === 0 ? (
-          <div className="p-8 text-center text-zinc-600 dark:text-zinc-400">
-            No leads found
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-zinc-50 dark:bg-zinc-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                    Company/Client
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                    Source
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider min-w-[400px]">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {filteredLeads.map((lead) => {
-                  const existingProject = leadToProjectMap.get(lead.id);
-                  const isLeadStale = isStale(lead.updatedAt);
 
-                  return (
-                    <tr
-                      key={lead.id}
-                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black dark:text-zinc-50">
-                        {lead.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
-                        {lead.companyOrClient}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <StatusSelect leadId={lead.id} currentStatus={lead.status} />
-                          {isLeadStale && (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                              Stale
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
-                        {lead.source || "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {existingProject ? (
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-zinc-600 dark:text-zinc-400">
-                              Converted →
-                            </span>
-                            <a
-                              href={`#project-${existingProject.id}`}
-                              className="font-mono text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {existingProject.projectCode}
-                            </a>
-                          </div>
-                        ) : lead.status === "qualified" ? (
-                          <ConvertLeadForm leadId={lead.id} />
-                        ) : (
-                          <button
-                            disabled
-                            className="px-3 py-1 text-xs font-medium rounded bg-zinc-300 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
-                          >
-                            Convert to Project
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* Converted Leads Section */}
+      {showConverted && convertedLeads.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-black dark:text-zinc-50 mb-3">
+            Converted Leads
+          </h3>
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-zinc-50 dark:bg-zinc-800">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Company/Client
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Source
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Last Contact
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {convertedLeads.map((lead) => renderLeadRow(lead, true))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Unconverted Leads Section */}
+      <div>
+        <h3 className="text-lg font-semibold text-black dark:text-zinc-50 mb-3">
+          Unconverted Leads
+        </h3>
+        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+          {filteredUnconvertedLeads.length === 0 ? (
+            <div className="p-8 text-center text-zinc-600 dark:text-zinc-400">
+              No leads found
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-zinc-50 dark:bg-zinc-800">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Company/Client
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Source
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                      Last Contact
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider min-w-[400px]">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {filteredUnconvertedLeads.map((lead) => renderLeadRow(lead))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
