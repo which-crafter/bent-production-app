@@ -20,6 +20,7 @@ function isStale(updatedAt: string): boolean {
 export function LeadsTable({ leads, projects }: LeadsTableProps) {
   const [showStale, setShowStale] = useState(false);
   const [showConverted, setShowConverted] = useState(false);
+  const [showLost, setShowLost] = useState(false);
 
   // Create a map of lead_id -> project for quick lookup
   const leadToProjectMap = new Map<string, Project>();
@@ -32,6 +33,12 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
     const isConverted = leadToProjectMap.has(lead.id);
     const isLeadStale = isStale(lead.updatedAt);
     const isActiveStatus = ["new", "contacted", "qualified"].includes(lead.status);
+    const isLost = lead.status === "lost";
+
+    // If "Show lost" is checked, include all lost leads
+    if (showLost && isLost) {
+      return true;
+    }
 
     // Default filter: active status, not converted, not stale
     const passesDefault = isActiveStatus && !isConverted && !isLeadStale;
@@ -55,8 +62,10 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
       <LeadFilters
         showStale={showStale}
         showConverted={showConverted}
+        showLost={showLost}
         onShowStaleChange={setShowStale}
         onShowConvertedChange={setShowConverted}
+        onShowLostChange={setShowLost}
       />
       <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
         {filteredLeads.length === 0 ? (
