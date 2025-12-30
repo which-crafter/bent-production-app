@@ -4,32 +4,11 @@ import { useState } from "react";
 import type { Lead, Project, LeadStatus } from "../types";
 import { ConvertLeadForm } from "./ConvertLeadForm";
 import { LeadFilters } from "./LeadFilters";
+import { StatusSelect } from "./StatusSelect";
 
 interface LeadsTableProps {
   leads: Lead[];
   projects: Project[];
-}
-
-function getStatusColor(status: LeadStatus): string {
-  switch (status) {
-    case "new":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-    case "contacted":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-    case "qualified":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-    case "lost":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
-  }
-}
-
-function formatStatus(status: LeadStatus): string {
-  return status
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }
 
 function isStale(updatedAt: string): boolean {
@@ -124,13 +103,7 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                              lead.status
-                            )}`}
-                          >
-                            {formatStatus(lead.status)}
-                          </span>
+                          <StatusSelect leadId={lead.id} currentStatus={lead.status} />
                           {isLeadStale && (
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
                               Stale

@@ -53,3 +53,22 @@ export async function createLead(
   redirect("/ops");
 }
 
+export async function updateLeadStatus(leadId: string, status: LeadStatus) {
+  const { error } = await supabase
+    .from("leads")
+    .update({ status })
+    .eq("id", leadId);
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+
+  revalidatePath("/ops");
+  return {
+    success: true,
+  };
+}
+
