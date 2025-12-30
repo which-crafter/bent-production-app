@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { Lead, Project, LeadRow, ProjectRow, LeadStatus, ProjectStatus } from "./types";
 import { LeadsTable } from "./_components/LeadsTable";
+import { CreateLeadForm } from "./_components/CreateLeadForm";
 
 function getStatusColor(status: LeadStatus | ProjectStatus): string {
   switch (status) {
@@ -88,6 +89,11 @@ export default async function OpsPage() {
             </p>
           </div>
         )}
+
+        {/* Create Lead Section */}
+        <section>
+          <CreateLeadForm />
+        </section>
 
         {/* Leads Section */}
         <section>
