@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { Lead, Project, LeadRow, ProjectRow, LeadStatus, ProjectStatus } from "./types";
-import { ConvertLeadForm } from "./_components/ConvertLeadForm";
+import { LeadsTable } from "./_components/LeadsTable";
 
 function getStatusColor(status: LeadStatus | ProjectStatus): string {
   switch (status) {
@@ -37,6 +37,7 @@ function transformLeadRow(row: LeadRow): Lead {
     companyOrClient: row.company_or_client,
     status: row.status,
     source: row.source || undefined,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -55,7 +56,7 @@ export default async function OpsPage() {
   // Fetch leads
   const { data: leadsData, error: leadsError } = await supabase
     .from("leads")
-    .select("id, name, company_or_client, status, source");
+    .select("id, name, company_or_client, status, source, updated_at");
 
   // Fetch projects
   const { data: projectsData, error: projectsError } = await supabase
@@ -93,76 +94,7 @@ export default async function OpsPage() {
           <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
             Leads
           </h2>
-          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-            {leads.length === 0 ? (
-              <div className="p-8 text-center text-zinc-600 dark:text-zinc-400">
-                No leads found
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-zinc-50 dark:bg-zinc-800">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                        Company/Client
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                        Source
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider min-w-[400px]">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                    {leads.map((lead: Lead) => (
-                      <tr
-                        key={lead.id}
-                        className="hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black dark:text-zinc-50">
-                          {lead.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
-                          {lead.companyOrClient}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                              lead.status
-                            )}`}
-                          >
-                            {formatStatus(lead.status)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
-                          {lead.source || "-"}
-                        </td>
-                        <td className="px-6 py-4">
-                          {lead.status === "qualified" ? (
-                            <ConvertLeadForm leadId={lead.id} />
-                          ) : (
-                            <button
-                              disabled
-                              className="px-3 py-1 text-xs font-medium rounded bg-zinc-300 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
-                            >
-                              Convert to Project
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <LeadsTable leads={leads} projects={projects} />
         </section>
 
         {/* Projects Section */}
@@ -200,6 +132,7 @@ export default async function OpsPage() {
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                     {projects.map((project: Project) => (
                       <tr
+                        id={`project-${project.id}`}
                         key={project.id}
                         className="hover:bg-zinc-50 dark:hover:bg-zinc-800"
                       >

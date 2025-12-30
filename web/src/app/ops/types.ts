@@ -8,6 +8,7 @@ export interface LeadRow {
   company_or_client: string;
   status: LeadStatus;
   source: string | null;
+  updated_at: string;
 }
 
 export interface ProjectRow {
@@ -26,6 +27,7 @@ export interface Lead {
   companyOrClient: string;
   status: LeadStatus;
   source?: string;
+  updatedAt: string;
 }
 
 export interface Project {

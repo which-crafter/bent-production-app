@@ -7,6 +7,7 @@ export const mockLeads: Lead[] = [
     companyOrClient: "Acme Corp",
     status: "new",
     source: "Website",
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "lead-2",
@@ -14,6 +15,7 @@ export const mockLeads: Lead[] = [
     companyOrClient: "TechStart Inc",
     status: "contacted",
     source: "Referral",
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "lead-3",
@@ -21,12 +23,14 @@ export const mockLeads: Lead[] = [
     companyOrClient: "Design Studio",
     status: "qualified",
     source: "LinkedIn",
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "lead-4",
     name: "Emily Davis",
     companyOrClient: "Creative Agency",
     status: "lost",
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "lead-5",
@@ -34,6 +38,7 @@ export const mockLeads: Lead[] = [
     companyOrClient: "Marketing Pro",
     status: "qualified",
     source: "Email Campaign",
+    updatedAt: new Date().toISOString(),
   },
 ];
 
