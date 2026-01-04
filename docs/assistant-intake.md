@@ -60,6 +60,32 @@ If a prior decision creates friction, it must be **flagged**, not changed.
 
 ---
 
+## Cursor Usage & Chat Discipline (Locked)
+
+Cursor is the primary repo-aware coding tool, used exclusively for scoped implementation tasks.
+
+ChatGPT acts as system architect, scope guardrail, and sequencing authority.
+
+### Chat Organization
+- One ChatGPT chat is used per module portion (e.g., Module 1 – Portion E).
+- Cursor chats should be started per portion, not per file.
+- Old Cursor chats should not be deleted; they serve as historical execution records.
+
+### Cursor Prompt Requirements
+Cursor prompts must be tightly scoped:
+- Explicit files to touch
+- Explicit files to avoid
+- No refactors unless instructed
+
+### Document Updates
+- `assistant-intake.md` is not updated per portion.
+- It is updated only at module boundaries when a module is completed and locked.
+
+### Code Changes
+- All code changes must be committed in small, incremental commits with lint/build verification.
+
+---
+
 ## High‑Level System Algorithm (Intent)
 
 This algorithm defines **what we are building**, independent of implementation details.
