@@ -1,3 +1,9 @@
+/**
+ * Inline status select component with auto-save.
+ * 
+ * Provides immediate feedback during save and reverts on error.
+ * Refreshes page data after successful save to update filters/stale logic.
+ */
 "use client";
 
 import { useState, useTransition } from "react";
@@ -10,6 +16,18 @@ interface StatusSelectProps {
   currentStatus: LeadStatus;
 }
 
+/**
+ * Status select dropdown with auto-save on change.
+ * 
+ * Features:
+ * - Optimistic UI update (status changes immediately)
+ * - Visual feedback: "Saving..." → "Saved" → idle
+ * - Error handling: reverts to previous status on failure
+ * - Auto-refresh after save to update filters/stale detection
+ * 
+ * @param leadId - UUID of the lead to update
+ * @param currentStatus - Current status value (used for initial state)
+ */
 export function StatusSelect({ leadId, currentStatus }: StatusSelectProps) {
   const [status, setStatus] = useState<LeadStatus>(currentStatus);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -17,9 +35,14 @@ export function StatusSelect({ leadId, currentStatus }: StatusSelectProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  /**
+   * Handles status change with optimistic update and error recovery.
+   * 
+   * @param newStatus - New status value selected by user
+   */
   async function handleChange(newStatus: LeadStatus) {
     const previousStatus = status;
-    setStatus(newStatus);
+    setStatus(newStatus); // Optimistic update
     setSaveState("saving");
     setErrorMessage(null);
 
@@ -37,7 +60,7 @@ export function StatusSelect({ leadId, currentStatus }: StatusSelectProps) {
         }, 3000);
       } else {
         setSaveState("saved");
-        // Refresh the page data
+        // Refresh the page data so filters/stale logic apply correctly
         router.refresh();
         // Clear saved message after 1 second
         setTimeout(() => {

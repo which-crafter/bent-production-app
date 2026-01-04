@@ -1,3 +1,13 @@
+/**
+ * Leads table component with filtering and inline editing.
+ * 
+ * Handles:
+ * - Status-based filtering (checkboxes)
+ * - Stale/converted toggles
+ * - Separate sections for converted vs unconverted leads
+ * - Inline status editing
+ * - Contact logging
+ */
 "use client";
 
 import { useState } from "react";
@@ -12,12 +22,29 @@ interface LeadsTableProps {
   projects: Project[];
 }
 
+/**
+ * Determines if a lead is stale (not updated in last 30 days).
+ * 
+ * Used for filtering to prevent endless growth of visible leads.
+ * 
+ * @param updatedAt - ISO timestamp string from database
+ * @returns true if lead hasn't been updated in 30+ days
+ */
 function isStale(updatedAt: string): boolean {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   return new Date(updatedAt) < thirtyDaysAgo;
 }
 
+/**
+ * Formats last contacted timestamp as relative time or date.
+ * 
+ * Returns human-readable relative time for recent contacts,
+ * falls back to date format for older entries.
+ * 
+ * @param lastContactedAt - ISO timestamp string (optional)
+ * @returns Formatted string: "just now", "2h ago", "yesterday", "3d ago", "2w ago", or date
+ */
 function formatLastContacted(lastContactedAt?: string): string {
   if (!lastContactedAt) {
     return "—";
@@ -47,20 +74,38 @@ function formatLastContacted(lastContactedAt?: string): string {
   }
 }
 
+/**
+ * Leads table component with filtering and inline editing.
+ * 
+ * Features:
+ * - Status filtering (checkboxes for new/contacted/qualified/lost)
+ * - Stale lead filtering (30+ days since update)
+ * - Converted lead separation (shows in separate section when enabled)
+ * - Inline status editing with auto-save
+ * - Contact logging per lead
+ * 
+ * Default view: Shows only new + contacted leads that are not stale and not converted.
+ */
 export function LeadsTable({ leads, projects }: LeadsTableProps) {
   const [showStale, setShowStale] = useState(false);
   const [showConverted, setShowConverted] = useState(false);
-  // Default: new + contacted checked (active leads)
+  // Default: new + contacted checked (active leads only)
   const [checkedStatuses, setCheckedStatuses] = useState<Set<LeadStatus>>(
     new Set(["new", "contacted"])
   );
 
-  // Create a map of lead_id -> project for quick lookup
+  // Create a map of lead_id -> project for O(1) lookup when checking if lead is converted
   const leadToProjectMap = new Map<string, Project>();
   projects.forEach((project) => {
     leadToProjectMap.set(project.leadId, project);
   });
 
+  /**
+   * Handles status checkbox changes in filter UI.
+   * 
+   * @param status - Status value to toggle
+   * @param checked - Whether checkbox is checked
+   */
   function handleStatusChange(status: LeadStatus, checked: boolean) {
     setCheckedStatuses((prev) => {
       const next = new Set(prev);
@@ -73,11 +118,12 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
     });
   }
 
-  // Separate converted and unconverted leads
+  // Separate converted and unconverted leads for different display sections
   const convertedLeads = leads.filter((lead) => leadToProjectMap.has(lead.id));
   const unconvertedLeads = leads.filter((lead) => !leadToProjectMap.has(lead.id));
 
-  // Filter unconverted leads based on criteria
+  // Filter unconverted leads based on status checkboxes and stale toggle
+  // Converted leads are handled separately and shown regardless of status when "Show converted" is enabled
   const filteredUnconvertedLeads = unconvertedLeads.filter((lead) => {
     const isLeadStale = isStale(lead.updatedAt);
 
@@ -95,6 +141,13 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
     return true;
   });
 
+  /**
+   * Renders a single lead row in the table.
+   * 
+   * @param lead - Lead data to render
+   * @param showProjectCode - If true, shows project code inline with lead name (for converted leads section)
+   * @returns Table row JSX
+   */
   function renderLeadRow(lead: Lead, showProjectCode: boolean = false) {
     const existingProject = leadToProjectMap.get(lead.id);
     const isLeadStale = isStale(lead.updatedAt);
@@ -131,6 +184,7 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
               Last contacted: {formatLastContacted(lead.lastContactedAt)}
             </div>
             {lead.lastContactNote && (
+              // whitespace-pre-line preserves newlines in append-only contact log
               <div className="text-xs text-zinc-500 dark:text-zinc-500 italic whitespace-pre-line">
                 {lead.lastContactNote}
               </div>
@@ -140,6 +194,7 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
         </td>
         <td className="px-6 py-4">
           {existingProject ? (
+            // Lead already converted - show link to project (anchor link scrolls to project row)
             <div className="flex items-center gap-2 text-sm">
               <span className="text-zinc-600 dark:text-zinc-400">Converted →</span>
               <a
@@ -150,8 +205,10 @@ export function LeadsTable({ leads, projects }: LeadsTableProps) {
               </a>
             </div>
           ) : lead.status === "qualified" ? (
+            // Qualified and not converted - show conversion form
             <ConvertLeadForm leadId={lead.id} />
           ) : (
+            // Not qualified - show disabled button
             <button
               disabled
               className="px-3 py-1 text-xs font-medium rounded bg-zinc-300 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"

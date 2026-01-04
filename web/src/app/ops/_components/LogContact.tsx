@@ -1,3 +1,9 @@
+/**
+ * Inline contact logging component (append-only).
+ * 
+ * Collapsible form that expands on click. Requires note before saving.
+ * On save, prepends timestamped entry to existing contact log.
+ */
 "use client";
 
 import { useState, useTransition } from "react";
@@ -9,6 +15,19 @@ interface LogContactProps {
   currentNote?: string;
 }
 
+/**
+ * Contact logging component with collapsible inline form.
+ * 
+ * Features:
+ * - Collapsed state: shows "Log contact" button
+ * - Expanded state: shows input field with Save/Cancel
+ * - Note is required (validated before save)
+ * - Keyboard shortcuts: Enter to save, Escape to cancel
+ * - Auto-collapses and refreshes on success
+ * 
+ * @param leadId - UUID of the lead to log contact for
+ * @param currentNote - Existing contact note (used for append-only prepend)
+ */
 export function LogContact({ leadId, currentNote }: LogContactProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [note, setNote] = useState("");
@@ -16,6 +35,12 @@ export function LogContact({ leadId, currentNote }: LogContactProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  /**
+   * Handles saving contact log entry.
+   * 
+   * Validates note is present, then calls server action to prepend
+   * timestamped entry to existing note (append-only pattern).
+   */
   async function handleSave() {
     setError(null);
     const trimmedNote = note.trim();
@@ -33,7 +58,7 @@ export function LogContact({ leadId, currentNote }: LogContactProps) {
       } else {
         setNote("");
         setIsExpanded(false);
-        router.refresh();
+        router.refresh(); // Refresh to show updated contact log
       }
     });
   }

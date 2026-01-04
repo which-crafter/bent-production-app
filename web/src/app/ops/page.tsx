@@ -1,8 +1,21 @@
+/**
+ * Operations page (/ops) - Leads and Projects management.
+ * 
+ * Server component that fetches leads and projects from Supabase,
+ * transforms database rows to UI-friendly format, and renders
+ * the operations interface with create/edit capabilities.
+ */
 import { supabase } from "@/lib/supabaseClient";
 import type { Lead, Project, LeadRow, ProjectRow, LeadStatus, ProjectStatus } from "./types";
 import { LeadsTable } from "./_components/LeadsTable";
 import { CreateLeadForm } from "./_components/CreateLeadForm";
 
+/**
+ * Returns Tailwind CSS classes for status badge colors.
+ * 
+ * @param status - Lead or project status
+ * @returns Tailwind classes for background and text colors (supports dark mode)
+ */
 function getStatusColor(status: LeadStatus | ProjectStatus): string {
   switch (status) {
     case "new":
@@ -24,6 +37,14 @@ function getStatusColor(status: LeadStatus | ProjectStatus): string {
   }
 }
 
+/**
+ * Formats status for display (capitalizes words, handles underscores).
+ * 
+ * Example: "on_hold" → "On Hold"
+ * 
+ * @param status - Status value (may contain underscores)
+ * @returns Formatted status string
+ */
 function formatStatus(status: LeadStatus | ProjectStatus): string {
   return status
     .split("_")
@@ -31,6 +52,13 @@ function formatStatus(status: LeadStatus | ProjectStatus): string {
     .join(" ");
 }
 
+/**
+ * Transforms database lead row (snake_case) to UI display format (camelCase).
+ * Converts null values to undefined for cleaner optional handling in components.
+ * 
+ * @param row - Database row from Supabase query
+ * @returns Lead object for UI components
+ */
 function transformLeadRow(row: LeadRow): Lead {
   return {
     id: row.id,
@@ -44,6 +72,13 @@ function transformLeadRow(row: LeadRow): Lead {
   };
 }
 
+/**
+ * Transforms database project row (snake_case) to UI display format (camelCase).
+ * Converts null values to undefined for cleaner optional handling in components.
+ * 
+ * @param row - Database row from Supabase query
+ * @returns Project object for UI components
+ */
 function transformProjectRow(row: ProjectRow): Project {
   return {
     id: row.id,
@@ -55,24 +90,33 @@ function transformProjectRow(row: ProjectRow): Project {
   };
 }
 
+/**
+ * Operations page component.
+ * 
+ * Fetches leads and projects from Supabase, handles errors, and renders
+ * the operations interface with three sections:
+ * - Create Lead form
+ * - Leads table (with filtering)
+ * - Projects table (read-only)
+ */
 export default async function OpsPage() {
-  // Fetch leads
+  // Fetch leads with all fields needed for display and filtering
   const { data: leadsData, error: leadsError } = await supabase
     .from("leads")
     .select("id, name, company_or_client, status, source, updated_at, last_contacted_at, last_contact_note");
 
-  // Fetch projects
+  // Fetch projects with fields needed for display and lead relationship mapping
   const { data: projectsData, error: projectsError } = await supabase
     .from("projects")
     .select("id, lead_id, project_code, name, client_name, status");
 
-  // Transform database rows to display format
+  // Transform database rows to display format (snake_case → camelCase)
   const leads: Lead[] = leadsData ? leadsData.map(transformLeadRow) : [];
   const projects: Project[] = projectsData
     ? projectsData.map(transformProjectRow)
     : [];
 
-  // Check for errors
+  // Aggregate errors from both queries for unified error display
   const hasError = leadsError || projectsError;
   const errorMessage = leadsError?.message || projectsError?.message;
 
@@ -143,6 +187,7 @@ export default async function OpsPage() {
                         id={`project-${project.id}`}
                         key={project.id}
                         className="hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                        // ID attribute allows anchor links from converted leads to scroll here
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-black dark:text-zinc-50">
                           {project.projectCode}
