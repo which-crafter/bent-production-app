@@ -5,6 +5,8 @@
  * (header + tabs). Routes outside this group (like /ops) are excluded and
  * render with the root layout only.
  */
+import { AppTabs } from "./_components/AppTabs";
+
 export default function AppLayout({
   children,
 }: {
@@ -12,7 +14,7 @@ export default function AppLayout({
 }) {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      {/* Minimal header */}
+      {/* Header with app title */}
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
         <div className="max-w-7xl mx-auto px-8 py-4">
           <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
@@ -21,14 +23,14 @@ export default function AppLayout({
         </div>
       </header>
 
-      {/* Placeholder for navigation tabs (to be implemented) */}
+      {/* Navigation tabs */}
       <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
         <div className="max-w-7xl mx-auto px-8">
-          {/* Tabs will be added here in future implementation */}
+          <AppTabs />
         </div>
       </nav>
 
-      {/* Main content */}
+      {/* Main content area */}
       <main className="max-w-7xl mx-auto px-8 py-8">
         {children}
       </main>
