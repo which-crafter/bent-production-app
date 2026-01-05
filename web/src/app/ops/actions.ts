@@ -160,3 +160,81 @@ export async function logContact(leadId: string, note: string, currentNote: stri
   };
 }
 
+/**
+ * Creates a new lead with a primary contact (Module 1 — Portion A).
+ * 
+ * This action will become the enforced lead creation path, replacing the simpler
+ * createLead() function. It enforces that every lead must have an associated
+ * primary contact, which is a core requirement for Module 1.
+ * 
+ * CURRENT STATE (Step 1):
+ * - Validates all required fields server-side
+ * - Does NOT yet write to database (deferred to next step)
+ * - Does NOT yet implement duplicate detection (deferred to future step)
+ * - Does NOT yet create contact records or contact_links (deferred to next step)
+ * 
+ * This step establishes the validation structure and function signature.
+ * Subsequent steps will add database writes, duplicate detection, and contact
+ * relationship creation.
+ * 
+ * @param input - Object containing lead data and primary contact data
+ * @param input.lead - Lead information (name required, other fields optional)
+ * @param input.primaryContact - Primary contact information (firstName, clientType required; email or phone required)
+ * @returns Success/error object (currently validation-only, no DB writes)
+ * @throws Error if validation fails (with user-friendly message)
+ */
+export async function createLeadWithPrimaryContact(input: {
+  lead: {
+    name: string;
+    status: LeadStatus;
+    companyOrClient?: string | null;
+    source?: string | null;
+    notes?: string | null;
+  };
+  primaryContact: {
+    firstName: string;
+    clientType: string;
+    email?: string | null;
+    phone?: string | null;
+    lastName?: string | null;
+    company?: string | null;
+    title?: string | null;
+    city?: string | null;
+    fullAddress?: string | null;
+    notes?: string | null;
+  };
+}) {
+  // Validation: lead.name is required
+  if (!input.lead.name || !input.lead.name.trim()) {
+    throw new Error("Lead name is required");
+  }
+
+  // Validation: primaryContact.firstName is required
+  if (!input.primaryContact.firstName || !input.primaryContact.firstName.trim()) {
+    throw new Error("Primary contact first name is required");
+  }
+
+  // Validation: primaryContact.clientType is required
+  if (!input.primaryContact.clientType || !input.primaryContact.clientType.trim()) {
+    throw new Error("Primary contact client type is required");
+  }
+
+  // Validation: at least one of email or phone must be present
+  const hasEmail = input.primaryContact.email && input.primaryContact.email.trim();
+  const hasPhone = input.primaryContact.phone && input.primaryContact.phone.trim();
+  if (!hasEmail && !hasPhone) {
+    throw new Error("Primary contact must have either an email address or phone number");
+  }
+
+  // TODO (Step 2+): Write lead to database
+  // TODO (Step 2+): Create contact record in contacts table
+  // TODO (Step 2+): Create contact_links record linking lead to contact
+  // TODO (Future): Implement duplicate detection before creating records
+
+  // Placeholder return (will be replaced with actual DB operations in next step)
+  return {
+    success: true,
+    message: "Validation passed (database writes deferred to next step)",
+  };
+}
+
