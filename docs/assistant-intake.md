@@ -36,6 +36,61 @@ If a prior decision creates friction, it must be **flagged**, not changed.
 
 ---
 
+## NEW CHAT STARTUP PROTOCOL (MANDATORY)
+
+**At the start of every new GPT chat session, you MUST:**
+
+1. **Confirm key roles:**
+   - GPT = system architect + scope guardrail + sequencing authority
+   - User = product owner + final decision-maker
+
+2. **Require the active module doc before doing any work:**
+   - Ask the user to paste the active module doc from `docs/modules/`
+   - Use this exact prompt:
+     ```
+     Please paste the contents of the active module document from docs/modules/.
+     I need to see the current module plan, decisions, next steps, and deferred items before proceeding.
+     ```
+
+3. **Require a Cursor export of current state:**
+   - Ask the user to run a Cursor export and paste the full output
+   - Use this exact prompt:
+     ```
+     Please run a Cursor export to document the current state of the repo.
+     Use this prompt in Cursor:
+     
+     "You are documenting the CURRENT STATE of the Bent Production App for the ACTIVE MODULE.
+     
+     Output a SINGLE, COPY-PASTEABLE REPORT.
+     
+     DO NOT suggest changes.
+     DO NOT refactor.
+     DO NOT speculate.
+     
+     SECTIONS:
+     1. Folder structure (tree view from /web)
+     2. Database schema (tables, columns, constraints) for tables touched in the active module (as specified in the active module doc)
+     3. Migrations added in the active module (list all migration files and their purpose)
+     4. Server actions added/changed in the active module
+     5. UI components added/changed for the active module
+     6. Known limitations intentionally left open
+     
+     If something does not exist, say: NOT PRESENT.
+     
+     Output everything in one response."
+     
+     Then paste the full output here.
+     ```
+
+4. **After receiving both:**
+   - Reconcile current reality vs module plan briefly
+   - Ask minimal clarifying questions if needed
+   - Proceed one small step at a time
+
+**DO NOT proceed with any implementation until both the module doc and Cursor export are provided.**
+
+---
+
 ## Core Operating Rules (Non‑Negotiable)
 
 1. **One module at a time**
@@ -57,6 +112,45 @@ If a prior decision creates friction, it must be **flagged**, not changed.
 5. **Controlled evolution**
    - The master plan may only be updated at module boundaries.
    - No ad‑hoc edits mid‑module.
+
+---
+
+## OPERATING RULES (SESSION-LEVEL)
+
+**During active work sessions, follow these rules:**
+
+1. **Small broken up tasks**
+   - Break work into small, discrete steps
+   - One file at a time when possible
+   - Complete and verify each step before moving to the next
+
+2. **Step-by-step commands**
+   - Include working directory in each command
+   - Be explicit about file paths and operations
+   - Do not assume current working directory
+
+3. **Test/commit discipline**
+   - Do not ask user to run tests/commits until the prior step is confirmed complete
+   - Wait for user confirmation before proceeding to next step
+   - Verify each change works before moving forward
+
+4. **Code quality standards**
+   - Modular code with clear separation of concerns
+   - Descriptive names for functions, variables, and files
+   - Strong comments explaining intent and non-obvious logic
+   - Best-practice file structures (follow Next.js conventions)
+
+5. **Commit hygiene**
+   - Small commits with focused changes
+   - Test before commit when code changes are involved
+   - Docs-only commits need no lint/build verification
+   - Clear commit messages describing what changed and why
+
+6. **No scope drift**
+   - Stay within current module + portion only
+   - Do not add features from future modules
+   - Do not refactor unrelated code
+   - Flag any scope questions before proceeding
 
 ---
 
@@ -201,15 +295,23 @@ Lifecycle states are strictly forward‑moving unless explicitly reopened.
 
 ## Module System Overview
 
-### Module Status
-- Module 0: Foundation — COMPLETE & LOCKED
-- Module 1: Leads & Intake — IN PROGRESS
-- Module 2: Projects Core — NOT STARTED
-- Module 3: Estimates & Sales Orders — NOT STARTED
-- Module 4: Purchasing & Production Phases — NOT STARTED
-- Module 5: Tasks & Time Tracking — NOT STARTED
-- Module 6: Permissions & Multi‑User Safety — NOT STARTED
-- Module 7: Reporting, Cleanup & Hardening — NOT STARTED
+### MODULE STATUS (CANONICAL)
+
+| Module | Name | Status |
+|--------|------|--------|
+| 0 | Foundation | LOCKED |
+| 1 | Leads & Intake | ACTIVE |
+| 2 | Projects Core | NOT_STARTED |
+| 3 | Estimates & Sales Orders | NOT_STARTED |
+| 4 | Purchasing & Production Phases | NOT_STARTED |
+| 5 | Tasks & Time Tracking | NOT_STARTED |
+| 6 | Permissions & Multi‑User Safety | NOT_STARTED |
+| 7 | Reporting, Cleanup & Hardening | NOT_STARTED |
+
+**Status definitions:**
+- **NOT_STARTED:** Module not yet planned or implemented
+- **ACTIVE:** Module is currently in progress (planning or implementation)
+- **LOCKED:** Module is complete; decisions are frozen; no changes without explicit user request
 
 ---
 
@@ -268,205 +370,11 @@ All must be true:
 
 ---
 
-## MODULE 1 — Leads & Intake (Expanded)
+## Active Module Reference
 
-# MODULE 1 — Leads & Intake
+**Module 1 authoritative doc:** `docs/modules/module-1-leads.md`
 
-## 1. Purpose
-Module 1 defines **how opportunities enter the system** and how they are prepared for conversion into projects.
-
-This module exists to:
-- Capture inbound opportunities in a structured way
-- Track lead status, activity, and staleness
-- Attach a **single primary contact** to each lead
-- Convert qualified leads into projects cleanly and deterministically
-
-This module explicitly **does not**:
-- Handle estimates
-- Handle sales orders
-- Handle purchasing
-- Handle production phases
-- Handle time tracking
-- Handle permissions or RLS
-
----
-
-## 2. Scope (Locked)
-
-### In Scope
-- Lead creation
-- Lead status management
-- Lead staleness logic
-- Primary contact capture and editing
-- Append-only contact/activity logging
-- Lead → Project conversion trigger
-- Duplicate detection (warn-only)
-- Basic homepage + navigation tab for Leads
-
-### Out of Scope
-- Estimates or pricing
-- Sales orders
-- Purchasing
-- Production phases
-- Time tracking
-- Multi-contact per lead (beyond primary)
-- Permissions / auth logic
-- Final navigation architecture (tabs are acceptable for now; future IA TBD)
-
----
-
-## 3. Data Surface
-
-### Tables Touched
-- leads
-- contacts
-- contact_links
-- projects (conversion only; no editing)
-- (optional) lead_contact_logs if introduced in this module
-
-### Lead Data (Module 1 Ownership)
-- Lead identity (name / label)
-- Lead status:
-  - new
-  - contacted
-  - qualified
-  - lost
-- Lead timestamps:
-  - created
-  - updated
-  - last contacted (for staleness)
-
-### Contact Rules (Locked)
-- Each lead has **exactly one primary contact**
-- Primary contact is required at lead creation
-- Primary contact minimum fields:
-  - first_name
-  - client_type
-  - at least one of: email or phone
-- Email and phone are optional but encouraged
-- Contacts may be reused across leads/projects later
-
-### Duplicate Logic (Locked)
-- Email match takes precedence
-- Phone match used as fallback
-- Matches warn only
-- User may proceed anyway
-- No automatic merging
-
----
-
-## 4. UI / UX Surface
-
-### Primary Surfaces (Module 1)
-- **Homepage** (basic)
-- **Navigation tabs** (basic, acceptable long-term; TBD)
-  - Leads is a tab
-  - Projects may exist as a tab later, but Module 1 focuses on Leads
-- `/ops` may remain temporarily as a developer/admin page during build-out, but it is not the primary user surface for Module 1.
-
-### UX Rules (Locked)
-- Inline edits auto-save
-- Visual feedback for saving / errors
-- Duplicate warnings must show:
-  - existing lead name
-  - quick-open option
-- Mobile-first layout:
-  - forms usable on phone
-  - tables degrade gracefully to stacked rows
-
----
-
-## 5. Decisions Locked in This Module
-- A lead must have a primary contact
-- A lead has only one primary contact
-- Primary contact is captured at lead creation
-- Lead status options are limited to: new, contacted, qualified, lost
-- Staleness is derived from timestamps, not manual flags
-- Duplicate detection is warn-only
-- Conversion creates a project but does not advance lifecycle beyond Quote
-- No estimates may be created at the lead stage
-- Module 1 primary surface is homepage + nav tabs; Leads is a tab (final IA TBD)
-
----
-
-## 6. Module Breakdown (Planning)
-
-### Portion A — Lead Creation
-- Lead form structure
-- Required vs optional fields
-- Primary contact capture
-- Duplicate warning flow
-
-### Portion B — Lead Management
-- Status transitions
-- Inline editing behavior
-- Stale logic definition
-- Filtering and visibility rules
-
-### Portion C — Contact Logging
-- Append-only log behavior
-- Timestamped entries
-- Relationship to staleness calculation
-
-### Portion D — Lead → Project Conversion
-- Conversion eligibility rules
-- Data passed into project
-- Post-conversion lead state
-
-### Portion E — Basic App Shell (Homepage + Tabs)
-- Basic homepage exists
-- Navigation tabs exist
-- Leads lives behind a Leads tab
-- `/ops` can remain as dev/admin but not primary surface
-
----
-
-## 7. Execution Checklist (Implementation-Level)
-- Lead creation requires primary contact
-- Client type enforced at lead creation
-- Duplicate check runs before save
-- Duplicate warning UI implemented
-- Lead status inline editing stable
-- Stale logic verified
-- Contact log append-only
-- Convert-to-project works deterministically
-- Mobile UX validated on phone & tablet
-- Homepage + tab navigation implemented; Leads accessible via tab
-
----
-
-## 8. Exit Criteria (All Must Be True)
-- All leads have a primary contact
-- Lead creation blocks missing required fields
-- Duplicate warnings appear correctly
-- Lead status changes persist correctly
-- Stale leads are correctly identified
-- Contact logs are append-only
-- Lead → Project conversion produces a valid project
-- No estimate functionality exists in lead flow
-- Homepage + nav tabs exist and Leads is accessible via tab
-
----
-
-## 9. Module Lock
-Once exit criteria are met:
-- Module 1 is marked COMPLETE & LOCKED
-- Lead data model is frozen
-- Intake assumptions are fixed
-- Future modules must adapt to these constraints
-
-A Cursor export must be run at this point.
-
----
-
-## 10. What's Next
-Module 2: Projects Core
-
-Dependencies from Module 1:
-- Project creation via conversion
-- Stable project identifiers
-- Initial lifecycle state = Quote
-- Primary contact carried forward
+All portion plans, decisions, next steps, deferred items, and current state live in the module-specific document. This intake doc only tracks module status and system-wide rules.
 
 ---
 
@@ -493,14 +401,87 @@ Task‑level execution lists are ephemeral unless explicitly promoted.
 
 ---
 
-## Cursor Export Prompt (End of Every Module)
+## DEFERRED ITEMS TRACKING
 
-At the end of each module, run this prompt in Cursor and paste the result back:
+**Rule:** Deferred items live in the active module doc under "Deferred / Parking Lot" section.
+
+**Process:**
+- When a new deferred item is discovered during work, it must be appended to the active module doc
+- Use Cursor to edit the module doc (e.g., `docs/modules/module-1-leads.md`)
+- Add the item to the "Deferred / Parking Lot" section
+- Do not add deferred items to this intake doc
+
+**Example:** If during Module 1 work you discover that "multi-contact support" should be deferred, add it to `docs/modules/module-1-leads.md` under "Deferred / Parking Lot", not here.
+
+---
+
+## END OF CHAT PROTOCOL (MANDATORY)
+
+**At the end of every GPT chat session, you MUST:**
+
+1. **Request Cursor export:**
+   - Ask the user to run a Cursor export using this exact prompt:
+     ```
+     Please run a Cursor export to document the current state of the repo.
+     Use this prompt in Cursor:
+     
+     "You are documenting the CURRENT STATE of the Bent Production App for the ACTIVE MODULE.
+     
+     Output a SINGLE, COPY-PASTEABLE REPORT.
+     
+     DO NOT suggest changes.
+     DO NOT refactor.
+     DO NOT speculate.
+     
+     SECTIONS:
+     1. Folder structure (tree view from /web)
+     2. Database schema (tables, columns, constraints) for tables touched in the active module (as specified in the active module doc)
+     3. Migrations added in the active module (list all migration files and their purpose)
+     4. Server actions added/changed in the active module
+     5. UI components added/changed for the active module
+     6. Known limitations intentionally left open
+     
+     If something does not exist, say: NOT PRESENT.
+     
+     Output everything in one response."
+     
+     Then paste the full output here.
+     ```
+
+2. **Decide if module doc updates are required:**
+   - If a milestone was reached (portion complete, major decision made, status change), module doc updates are required
+   - If only incremental progress, module doc updates may not be needed
+   - When in doubt, update the module doc
+
+3. **Have Cursor update the active module doc if needed:**
+   - If updates are required, instruct the user to have Cursor edit the module doc
+   - Provide specific guidance on what sections to update
+   - Example: "Have Cursor update docs/modules/module-1-leads.md: mark Portion A Step B1 as complete in Current State section"
+
+4. **Update this intake doc only when module status changes:**
+   - Update MODULE STATUS table when a module transitions (e.g., ACTIVE → LOCKED)
+   - Update when moving to a new module (e.g., Module 1 LOCKED, Module 2 ACTIVE)
+   - Do not update for incremental progress within a module
+
+5. **Output a ready-to-use "next chat starter" snippet:**
+   - Provide a short snippet the user can paste at the start of the next chat
+   - Format:
+     ```
+     Upload docs/assistant-intake.md only.
+     Active module: Module 1 (docs/modules/module-1-leads.md)
+     ```
+   - Keep it brief and focused
+
+---
+
+## Cursor Export Prompt (Current State Documentation)
+
+**Use this prompt in Cursor to document current state:**
 
 ```
-You are documenting the CURRENT STATE of the Bent Production App.
+You are documenting the CURRENT STATE of the Bent Production App for the ACTIVE MODULE.
 
-Output a SINGLE, COPY‑PASTEABLE REPORT.
+Output a SINGLE, COPY-PASTEABLE REPORT.
 
 DO NOT suggest changes.
 DO NOT refactor.
@@ -508,10 +489,10 @@ DO NOT speculate.
 
 SECTIONS:
 1. Folder structure (tree view from /web)
-2. Database schema (tables, columns, constraints)
-3. Migrations added in THIS MODULE
-4. Server actions added/changed
-5. UI components added/changed
+2. Database schema (tables, columns, constraints) for tables touched in the active module (as specified in the active module doc)
+3. Migrations added in the active module (list all migration files and their purpose)
+4. Server actions added/changed in the active module
+5. UI components added/changed for the active module
 6. Known limitations intentionally left open
 
 If something does not exist, say: NOT PRESENT.
@@ -519,7 +500,7 @@ If something does not exist, say: NOT PRESENT.
 Output everything in one response.
 ```
 
-This report becomes the handoff artifact for the next module.
+**Note:** This prompt is module-agnostic and works for any active module. The active module doc specifies which tables, components, and files are relevant.
 
 ---
 
@@ -527,7 +508,7 @@ This report becomes the handoff artifact for the next module.
 
 To move to the next module, the user will explicitly say:
 
-“Proceed to Module X. Use the current locked plan. Do not redesign prior modules.”
+"Proceed to Module X. Use the current locked plan. Do not redesign prior modules."
 
 Only after this command may the next module be expanded.
 
@@ -535,15 +516,8 @@ Only after this command may the next module be expanded.
 
 ## How to Use This Document
 
-- Store this file in the project folder (recommended: `docs/assistant-intake.md`)
-- Reuse it for every new module and new chat
-- Treat it as the constitution of the project
-- Update it only at module boundaries
-
----
-
-## Next Step
-
-The user will specify **which module to expand next**.
-
-No implementation begins until that module is fully planned and approved.
+- Upload this file at the start of every new GPT chat
+- This is the canonical "controller" document
+- Module-specific details live in `docs/modules/module-X-*.md`
+- This doc tracks system-wide rules, module status, and protocols only
+- Update this doc only when module status changes or system-wide rules evolve
