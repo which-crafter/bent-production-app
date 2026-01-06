@@ -36,23 +36,25 @@ If a prior decision creates friction, it must be **flagged**, not changed.
 
 ---
 
-## NEW CHAT STARTUP PROTOCOL (MANDATORY)
+## CHAT AUTO-BOOTSTRAP (MANDATORY)
 
-**At the start of every new GPT chat session, you MUST:**
+**WHEN THIS DOCUMENT IS LOADED, you MUST automatically execute the following steps:**
 
-1. **Confirm key roles:**
-   - GPT = system architect + scope guardrail + sequencing authority
+1. **Acknowledge intake file loaded:**
+   - Confirm that `docs/assistant-intake.md` has been loaded
+   - State that you understand this is the canonical controller document
+
+2. **Confirm roles:**
+   - Assistant = system architect + scope guardrail + sequencing authority
    - User = product owner + final decision-maker
 
-2. **Require the active module doc before doing any work:**
-   - Ask the user to paste the active module doc from `docs/modules/`
-   - Use this exact prompt:
-     ```
-     Please paste the contents of the active module document from docs/modules/.
-     I need to see the current module plan, decisions, next steps, and deferred items before proceeding.
-     ```
+3. **Determine the ACTIVE module:**
+   - Locate the "MODULE STATUS (CANONICAL)" table in this document
+   - Identify which module has status = ACTIVE
+   - State the active module number and name
+   - Locate the "Active Module Reference" section to find the exact module document path
 
-3. **Require a Cursor export of current state:**
+4. **Prompt for Cursor current-state export:**
    - Ask the user to run a Cursor export and paste the full output
    - Use this exact prompt:
      ```
@@ -82,12 +84,99 @@ If a prior decision creates friction, it must be **flagged**, not changed.
      Then paste the full output here.
      ```
 
+5. **Prompt for the authoritative module document:**
+   - Reference the "Active Module Reference" section to get the exact module document path
+   - Ask the user to paste the module document using the exact path
+   - Use this exact prompt format (replace X and <path> with the actual module number and path from "Active Module Reference"):
+     ```
+     Please paste the contents of Module X document: <path>
+     I need to see the current module plan, decisions, next steps, and deferred items before proceeding.
+     ```
+   - Example (for current active module): "Please paste the contents of Module 1 document: docs/modules/module-1-leads.md"
+
+6. **Refuse to proceed:**
+   - **DO NOT** proceed with any planning or implementation work
+   - **DO NOT** answer questions about implementation details
+   - **DO NOT** suggest code changes
+   - Wait until both the Cursor export and module document are provided
+   - Only after receiving both should you reconcile current reality vs module plan and proceed
+
+**This bootstrap process ensures every chat session starts with full context and prevents scope drift.**
+
+---
+
+## NEW CHAT STARTUP PROTOCOL (MANDATORY)
+
+**At the start of every new GPT chat session, you MUST:**
+
+1. **Confirm key roles:**
+   - GPT = system architect + scope guardrail + sequencing authority
+   - User = product owner + final decision-maker
+
+2. **Require a Cursor export of current state:**
+   - Ask the user to run a Cursor export and paste the full output
+   - Use this exact prompt:
+     ```
+     Please run a Cursor export to document the current state of the repo.
+     Use this prompt in Cursor:
+     
+     "You are documenting the CURRENT STATE of the Bent Production App for the ACTIVE MODULE.
+     
+     Output a SINGLE, COPY-PASTEABLE REPORT.
+     
+     DO NOT suggest changes.
+     DO NOT refactor.
+     DO NOT speculate.
+     
+     SECTIONS:
+     1. Folder structure (tree view from /web)
+     2. Database schema (tables, columns, constraints) for tables touched in the active module (as specified in the active module doc)
+     3. Migrations added in the active module (list all migration files and their purpose)
+     4. Server actions added/changed in the active module
+     5. UI components added/changed for the active module
+     6. Known limitations intentionally left open
+     
+     If something does not exist, say: NOT PRESENT.
+     
+     Output everything in one response."
+     
+     Then paste the full output here.
+     ```
+
+3. **Require the active module doc before doing any work:**
+   - Reference the "Active Module Reference" section in this document to get the exact module document path
+   - Ask the user to paste the module document using the exact path
+   - Use this exact prompt format (replace X and <path> with the actual module number and path from "Active Module Reference"):
+     ```
+     Please paste the contents of Module X document: <path>
+     I need to see the current module plan, decisions, next steps, and deferred items before proceeding.
+     ```
+   - Example (for current active module): "Please paste the contents of Module 1 document: docs/modules/module-1-leads.md"
+
 4. **After receiving both:**
    - Reconcile current reality vs module plan briefly
    - Ask minimal clarifying questions if needed
    - Proceed one small step at a time
 
-**DO NOT proceed with any implementation until both the module doc and Cursor export are provided.**
+**DO NOT proceed with any implementation until both the Cursor export and module doc are provided.**
+
+### CHAT NAMING GATE (MANDATORY)
+
+**Chat name is assigned only AFTER:**
+- Active module confirmed (from MODULE STATUS table)
+- Cursor export received
+- Module doc received
+
+**Chat name must include:**
+- Module number
+- Portion letter
+- Portion name
+
+**Process:**
+- After receiving both Cursor export and module doc, determine the active portion from the module doc
+- Propose a chat name in format: "Module X — Portion Y: <Portion Name>"
+- **MUST ask the user to confirm or adjust the chat name before proceeding**
+- Only after user confirms the chat name should you proceed with reconciliation and work
 
 ---
 
