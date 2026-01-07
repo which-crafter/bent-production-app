@@ -416,7 +416,13 @@ export async function updateProjectLifecycleState(input: {
 
   // Build update object
   const now = new Date().toISOString();
-  const updateData: Record<string, any> = {};
+  const updateData: Partial<{
+    lifecycle_state: string;
+    prev_lifecycle_state: string | null;
+    hold_reason: string | null;
+    hold_at: string;
+    lifecycle_override_reason: string;
+  }> = {};
 
   // Handle entering hold state
   if (input.targetState === 'hold') {
@@ -489,7 +495,10 @@ export async function updateProjectBasics(input: {
   }
 
   // Build update object
-  const updateData: Record<string, any> = {
+  const updateData: Partial<{
+    name: string;
+    client_name: string | null;
+  }> = {
     name: input.name.trim(),
   };
 
