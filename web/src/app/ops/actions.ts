@@ -309,3 +309,209 @@ export async function createLeadWithPrimaryContact(input: {
   };
 }
 
+/**
+ * Lifecycle state type for projects.
+ */
+type LifecycleState = 'quote' | 'awarded' | 'released' | 'active' | 'closed' | 'hold';
+
+/**
+ * Helper: Get the next state in the forward chain.
+ * Forward chain: quote -> awarded -> released -> active -> closed
+ */
+function getNextState(currentState: LifecycleState): LifecycleState | null {
+  const forwardChain: Record<LifecycleState, LifecycleState | null> = {
+    quote: 'awarded',
+    awarded: 'released',
+    released: 'active',
+    active: 'closed',
+    closed: null, // closed is terminal
+    hold: null, // hold is special, not in forward chain
+  };
+  return forwardChain[currentState] || null;
+}
+
+/**
+ * Updates a project's lifecycle_state with enforced transition rules (Module 2 — Portion B).
+ * 
+ * LIFECYCLE RULES:
+ * - Forward chain: quote -> awarded -> released -> active -> closed
+ * - Hold semantics: any state -> hold (saves prev_lifecycle_state)
+ * - Override rule: any non-forward transition requires override=true and override_reason
+ * 
+ * @param input - Transition parameters
+ * @param input.projectId - Required project UUID
+ * @param input.targetState - Target lifecycle state
+ * @param input.override - If true, allows non-forward transitions (requires overrideReason)
+ * @param input.overrideReason - Required if override=true (min 5 chars after trim)
+ * @param input.holdReason - Optional reason when entering hold state
+ * @returns Success/error object (no redirect, allows inline UI updates)
+ */
+export async function updateProjectLifecycleState(input: {
+  projectId: string;
+  targetState: LifecycleState;
+  override?: boolean;
+  overrideReason?: string;
+  holdReason?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  // Validation: projectId required
+  if (!input.projectId || !input.projectId.trim()) {
+    return { ok: false, error: 'Project ID is required' };
+  }
+
+  // Validation: targetState required
+  if (!input.targetState) {
+    return { ok: false, error: 'Target state is required' };
+  }
+
+  // Validation: If override=true => override_reason required (non-empty after trim)
+  if (input.override === true) {
+    const trimmedReason = input.overrideReason?.trim() || '';
+    if (!trimmedReason) {
+      return { ok: false, error: 'Override reason is required' };
+    }
+  }
+
+  // Fetch current project state
+  const { data: project, error: fetchError } = await supabase
+    .from('projects')
+    .select('lifecycle_state, prev_lifecycle_state')
+    .eq('id', input.projectId)
+    .single();
+
+  if (fetchError) {
+    return { ok: false, error: `Failed to fetch project: ${fetchError.message}` };
+  }
+
+  if (!project) {
+    return { ok: false, error: 'Project not found' };
+  }
+
+  const currentState = project.lifecycle_state as LifecycleState;
+  const prevState = project.prev_lifecycle_state as LifecycleState | null;
+
+  // Validation: If entering hold (targetState='hold') and override=false: allowed from any non-hold state
+  if (input.targetState === 'hold' && input.override !== true) {
+    if (currentState === 'hold') {
+      return { ok: false, error: 'Project is already on hold' };
+    }
+    // Allowed transition: any non-hold state -> hold
+  }
+  // Validation: If current state is hold and override=false: only targetState == prev_lifecycle_state allowed
+  else if (currentState === 'hold' && input.override !== true) {
+    if (!prevState) {
+      return { ok: false, error: 'Cannot resume from hold: previous state is missing' };
+    }
+    if (input.targetState !== prevState) {
+      return { ok: false, error: `When resuming from hold, target state must be ${prevState}` };
+    }
+  }
+  // Validation: If override=false and current state != hold and targetState != hold:
+  // targetState must be exactly the next state in the forward chain
+  else if (input.override !== true && currentState !== 'hold' && input.targetState !== 'hold') {
+    const nextState = getNextState(currentState);
+    if (input.targetState !== nextState) {
+      return { ok: false, error: `Invalid transition: ${currentState} -> ${input.targetState}. Expected: ${nextState || 'none (terminal state)'}` };
+    }
+  }
+
+  // Build update object
+  const now = new Date().toISOString();
+  const updateData: Record<string, any> = {};
+
+  // Handle entering hold state
+  if (input.targetState === 'hold') {
+    updateData.lifecycle_state = 'hold';
+    // Only set prev_lifecycle_state if not already in hold (preserve existing prev on re-hold)
+    if (currentState !== 'hold') {
+      updateData.prev_lifecycle_state = currentState;
+    }
+    updateData.hold_at = now;
+    // Set hold_reason if provided (can be null)
+    if (input.holdReason !== undefined) {
+      updateData.hold_reason = input.holdReason?.trim() || null;
+    }
+  }
+  // Handle resuming from hold (targetState == prev_lifecycle_state)
+  else if (currentState === 'hold' && input.targetState === prevState) {
+    updateData.lifecycle_state = input.targetState;
+    // Do NOT clear hold_reason or hold_at (keep history)
+    // Do NOT change prev_lifecycle_state on resume (leave it as the last pre-hold state)
+  }
+  // Handle regular state transitions
+  else {
+    updateData.lifecycle_state = input.targetState;
+  }
+
+  // Handle override: write lifecycle_override_reason
+  if (input.override === true) {
+    updateData.lifecycle_override_reason = input.overrideReason?.trim() || '';
+  }
+
+  // Perform update
+  const { error: updateError } = await supabase
+    .from('projects')
+    .update(updateData)
+    .eq('id', input.projectId);
+
+  if (updateError) {
+    return { ok: false, error: `Failed to update project: ${updateError.message}` };
+  }
+
+  // Revalidate paths
+  revalidatePath('/projects');
+  revalidatePath('/ops');
+
+  return { ok: true };
+}
+
+/**
+ * Updates a project's name and client_name (Module 2 scope).
+ * 
+ * @param input - Update parameters
+ * @param input.projectId - Required project UUID
+ * @param input.name - Required project name
+ * @param input.clientName - Optional client name (can be null to clear)
+ * @returns Success/error object (no redirect, allows inline UI updates)
+ */
+export async function updateProjectBasics(input: {
+  projectId: string;
+  name: string;
+  clientName?: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  // Validation: projectId required
+  if (!input.projectId || !input.projectId.trim()) {
+    return { ok: false, error: 'Project ID is required' };
+  }
+
+  // Validation: name required
+  if (!input.name || !input.name.trim()) {
+    return { ok: false, error: 'Project name is required' };
+  }
+
+  // Build update object
+  const updateData: Record<string, any> = {
+    name: input.name.trim(),
+  };
+
+  // Handle clientName (can be null to clear)
+  if (input.clientName !== undefined) {
+    updateData.client_name = input.clientName?.trim() || null;
+  }
+
+  // Perform update
+  const { error: updateError } = await supabase
+    .from('projects')
+    .update(updateData)
+    .eq('id', input.projectId);
+
+  if (updateError) {
+    return { ok: false, error: `Failed to update project: ${updateError.message}` };
+  }
+
+  // Revalidate paths
+  revalidatePath('/projects');
+  revalidatePath('/ops');
+
+  return { ok: true };
+}
+
