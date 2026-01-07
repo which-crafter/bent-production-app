@@ -16,8 +16,6 @@ export function CreateLeadForm() {
   const [clientType, setClientType] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [company, setCompany] = useState("");
-  const [title, setTitle] = useState("");
   const [contactNotes, setContactNotes] = useState("");
 
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +43,11 @@ export function CreateLeadForm() {
       return;
     }
 
+    if (!source.trim()) {
+      setError("Source is required");
+      return;
+    }
+
     const hasEmail = email.trim();
     const hasPhone = phone.trim();
     if (!hasEmail && !hasPhone) {
@@ -58,7 +61,7 @@ export function CreateLeadForm() {
           lead: {
             name: name.trim(),
             companyOrClient: companyOrClient.trim() || null,
-            source: source.trim() || null,
+            source: source.trim(),
             notes: notes.trim() || null,
           },
           primaryContact: {
@@ -67,8 +70,7 @@ export function CreateLeadForm() {
             clientType: clientType.trim(),
             email: email.trim() || null,
             phone: phone.trim() || null,
-            company: company.trim() || null,
-            title: title.trim() || null,
+            company: companyOrClient.trim() || null,
             notes: contactNotes.trim() || null,
           },
         });
@@ -86,8 +88,6 @@ export function CreateLeadForm() {
           setClientType("");
           setEmail("");
           setPhone("");
-          setCompany("");
-          setTitle("");
           setContactNotes("");
           setSuccess(true);
           // Clear success message after 3 seconds
@@ -99,7 +99,7 @@ export function CreateLeadForm() {
     });
   }
 
-  const isFormValid = name.trim() && firstName.trim() && clientType.trim() && (email.trim() || phone.trim());
+  const isFormValid = name.trim() && firstName.trim() && clientType.trim() && source.trim() && (email.trim() || phone.trim());
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 p-6">
@@ -128,7 +128,7 @@ export function CreateLeadForm() {
                 required
                 disabled={isPending}
                 className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                placeholder="Enter lead name"
+                placeholder="e.g., Ken — Cabinet quote — Glendale"
               />
             </div>
 
@@ -155,13 +155,14 @@ export function CreateLeadForm() {
                 htmlFor="lead-source"
                 className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
               >
-                Source
+                Source <span className="text-red-500">*</span>
               </label>
               <input
                 id="lead-source"
                 type="text"
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
+                required
                 disabled={isPending}
                 className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 placeholder="Enter source"
@@ -273,6 +274,9 @@ export function CreateLeadForm() {
                 className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 placeholder="Enter email address"
               />
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                Email or Phone is required (at least one).
+              </p>
             </div>
 
             <div>
@@ -291,43 +295,11 @@ export function CreateLeadForm() {
                 className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 placeholder="Enter phone number"
               />
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                Email or Phone is required (at least one).
+              </p>
             </div>
 
-            <div>
-              <label
-                htmlFor="contact-company"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Company
-              </label>
-              <input
-                id="contact-company"
-                type="text"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                disabled={isPending}
-                className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                placeholder="Enter company"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Title
-              </label>
-              <input
-                id="title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={isPending}
-                className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                placeholder="Enter title"
-              />
-            </div>
 
             <div className="md:col-span-2">
               <label
