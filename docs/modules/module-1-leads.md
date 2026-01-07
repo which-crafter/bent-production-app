@@ -174,11 +174,17 @@ This module explicitly **does not**:
 - **Single form flow:** Intake UX is a SINGLE form flow that writes to multiple tables (leads + contacts + contact_links) with shared company input and two notes fields (lead notes and contact notes)
 - **Lead name template:** UI will provide a suggested template for lead name (do not implement here; just document intent)
 
-### Portion B — Lead Management
+### Portion B — Lead Management (LOCKED)
 - Status transitions
 - Inline editing behavior
 - Stale logic definition
 - Filtering and visibility rules
+
+**Locked Decisions:**
+- Status transitions: Inline editing via dropdown with auto-save; optimistic UI updates with error recovery
+- Stale logic: Leads are considered stale if not updated in 30+ days (derived from `updated_at` timestamp)
+- Filtering: Status-based checkboxes (new, contacted, qualified, lost); separate toggles for stale and converted leads
+- Visibility: Default view shows new + contacted leads that are not stale and not converted; converted leads shown in separate section when enabled
 
 ### Portion C — Contact Logging
 - Append-only log behavior
@@ -245,10 +251,15 @@ This module explicitly **does not**:
 - Duplicate detection logic (warn-only; check email first, then phone)
 - Decision needed: whether to add `first_name`/`last_name` columns to contacts table or use `display_name` (currently schema uses `display_name`)
 
-### Portions B, C, D — PARTIAL
-- **Status transitions and inline editing:** Implemented on `/ops` (admin surface) but not yet promoted to `/leads`
-- **Contact logging:** `logContact` function and UI exist on `/ops` but not yet integrated into `/leads`
-- **Lead → Project conversion:** RPC function `convert_lead_to_project` exists and works; conversion UI exists on `/ops` but not yet in `/leads`
+### Portion B — COMPLETE
+- **Status transitions and inline editing:** StatusSelect component implemented with auto-save, optimistic UI updates, and error recovery
+- **Stale logic:** Implemented in LeadsTable component (30+ days since update)
+- **Filtering and visibility:** LeadFilters component implemented with status checkboxes and stale/converted toggles
+- **Integration:** All Portion B functionality is present on `/leads` page via LeadsTable component (reused from `/ops/_components`)
+
+### Portions C, D — COMPLETE
+- **Contact logging:** `logContact` function and LogContact component exist and are integrated into LeadsTable, which is used on both `/ops` and `/leads` pages
+- **Lead → Project conversion:** RPC function `convert_lead_to_project` exists and works; ConvertLeadForm component is integrated into LeadsTable, which is used on both `/ops` and `/leads` pages
 
 ---
 
@@ -278,11 +289,6 @@ This module explicitly **does not**:
    - Show warning modal/alert when duplicates detected
    - Display existing lead name and quick-open option
    - Allow user to proceed or cancel
-
-3. **Portion B — Lead Management:** Define and lock decisions
-   - Status transitions and inline editing behavior
-   - Stale logic definition
-   - Filtering and visibility rules
 
 ---
 
