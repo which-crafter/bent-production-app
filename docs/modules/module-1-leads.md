@@ -113,6 +113,14 @@ This module explicitly **does not**:
 - **Client type enum values are locked:** `'homeowner' | 'designer' | 'contractor' | 'dealer' | 'architect' | 'retail' | 'other'`
 - **Role distinction:** Contacts have a `role` field (separate from `client_type`); `client_type` indicates the type of client (homeowner, designer, etc.), while `role` is a free-form field
 - **Company table deferred:** Normalization of company/client data into a separate `companies` table is explicitly deferred to Module 2
+- **Lead naming:** Lead name is free text, but UI provides a suggested template and user may override; lead name remains editable after creation
+- **Source required (locked):** `leads.source` will be enforced at the DATABASE level (NOT NULL) via a Module 1 migration. Existing NULL values must be backfilled during the migration (e.g., 'legacy' or 'unknown').
+- **Company input:** A single Company/Client input is captured in the lead creation UX and written to BOTH `leads.company_or_client` and `contacts.company`
+- **Notes separation:** Lead notes and contact notes are separate inputs, stored in `leads.notes` and `contacts.notes` respectively
+- **Contact comms:** Primary contact must have email OR phone (at least one required)
+- **Title removed:** Title field removed from intake UI (deferred to later if needed)
+- **Duplicate detection rules:** Warn-only; check email first, then phone; allow user to proceed
+- **Atomic create RPC:** Deferred; note that current approach is sequential writes and will be replaced later
 
 ---
 
@@ -123,6 +131,8 @@ This module explicitly **does not**:
 - Required vs optional fields
 - Primary contact capture
 - Duplicate warning flow
+- **Single form flow:** Intake UX is a SINGLE form flow that writes to multiple tables (leads + contacts + contact_links) with shared company input and two notes fields (lead notes and contact notes)
+- **Lead name template:** UI will provide a suggested template for lead name (do not implement here; just document intent)
 
 ### Portion B — Lead Management
 - Status transitions
@@ -182,6 +192,7 @@ This module explicitly **does not**:
 - Decision needed: whether to add `first_name`/`last_name` columns to contacts table or use `display_name` (currently schema uses `display_name`)
 - Duplicate detection logic
 - UI form for `createLeadWithPrimaryContact`
+- **Note:** Intake UX is a SINGLE form flow that writes to multiple tables (leads + contacts + contact_links) with shared company input and two notes fields
 
 ### Portions B, C, D — PARTIAL
 - **Status transitions and inline editing:** Implemented on `/ops` (admin surface) but not yet promoted to `/leads`
@@ -198,6 +209,9 @@ This module explicitly **does not**:
 - Final navigation architecture (tabs are acceptable for now; future IA TBD)
 - Permissions / auth logic / RLS
 - Estimates, sales orders, purchasing, production phases, time tracking
+- Create an RPC (transaction) for atomic creation of lead + primary contact + contact_link (replace sequential writes)
+- Add a dedicated Contacts editing surface outside lead creation (e.g., /contacts or equivalent)
+- Duplicate detection UI + autofill/suggested lead name UX (warn-only) — still deferred but rules are locked
 
 ---
 
@@ -213,7 +227,8 @@ This module explicitly **does not**:
 2. **Portion A Step B2:** Create UI form component for `createLeadWithPrimaryContact`
    - Build form in `/leads` page or separate component
    - Include all required fields (lead name, contact first name, client type, email/phone)
-   - Include optional fields (last name, company, title, city, address, notes)
+   - Include optional fields (last name, company, city, address, notes)
+   - **Note:** Single form flow writes to leads + contacts + contact_links with shared company input and two notes fields (lead notes and contact notes)
    - Wire up to `createLeadWithPrimaryContact` action
    - Handle validation errors and success states
 
