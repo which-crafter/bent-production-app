@@ -240,6 +240,17 @@ This module explicitly **does not**:
   - `projects_prev_lifecycle_state_check` (enforces: NULL or 'quote', 'awarded', 'released', 'active', 'closed' — excludes 'hold')
 - **Note:** Existing historical test projects may have `status='active'` but `lifecycle_state='quote'` due to legacy defaults. `lifecycle_state` is authoritative going forward.
 
+### Portion B — COMPLETE
+- **Server actions implemented:** `web/src/app/ops/actions.ts`
+  - `updateProjectLifecycleState`
+    - Enforces forward-only lifecycle transitions by default
+    - Supports Hold state with prev_lifecycle_state resume semantics
+    - Allows override transitions with required override reason
+  - `updateProjectBasics`
+    - Allows editing `projects.name` and `projects.client_name` only
+- **Validation rules enforced at application layer**
+- **No UI changes included in this portion**
+
 ### Portions B, C, D — NOT STARTED
 
 ---
