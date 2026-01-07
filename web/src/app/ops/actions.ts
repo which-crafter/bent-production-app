@@ -163,24 +163,23 @@ export async function logContact(leadId: string, note: string, currentNote: stri
 /**
  * Creates a new lead with a primary contact (Module 1 — Portion A).
  * 
- * This action will become the enforced lead creation path, replacing the simpler
- * createLead() function. It enforces that every lead must have an associated
- * primary contact, which is a core requirement for Module 1.
+ * This action enforces that every lead must have an associated primary contact,
+ * which is a core requirement for Module 1. It replaces the simpler createLead()
+ * function as the enforced lead creation path.
  * 
- * CURRENT STATE (Step 1):
+ * CURRENT STATE (Step B1):
  * - Validates all required fields server-side
- * - Does NOT yet write to database (deferred to next step)
+ * - Creates lead record in leads table
+ * - Creates contact record in contacts table (display_name combines first_name + last_name)
+ * - Creates contact_links record linking lead to contact with relationship 'primary'
+ * - Handles errors explicitly at each step
+ * - Revalidates /leads and /ops paths on success
  * - Does NOT yet implement duplicate detection (deferred to future step)
- * - Does NOT yet create contact records or contact_links (deferred to next step)
- * 
- * This step establishes the validation structure and function signature.
- * Subsequent steps will add database writes, duplicate detection, and contact
- * relationship creation.
  * 
  * @param input - Object containing lead data and primary contact data
  * @param input.lead - Lead information (name required, other fields optional)
  * @param input.primaryContact - Primary contact information (firstName, clientType required; email or phone required)
- * @returns Success/error object (currently validation-only, no DB writes)
+ * @returns Success/error object (no redirect, allows UI to handle response)
  * @throws Error if validation fails (with user-friendly message)
  */
 export async function createLeadWithPrimaryContact(input: {
@@ -226,15 +225,87 @@ export async function createLeadWithPrimaryContact(input: {
     throw new Error("Primary contact must have either an email address or phone number");
   }
 
-  // TODO (Step 2+): Write lead to database
-  // TODO (Step 2+): Create contact record in contacts table
-  // TODO (Step 2+): Create contact_links record linking lead to contact
-  // TODO (Future): Implement duplicate detection before creating records
+  // Step 1: Create lead record
+  const { data: leadData, error: leadError } = await supabase
+    .from("leads")
+    .insert({
+      name: input.lead.name.trim(),
+      status: input.lead.status || "new",
+      company_or_client: input.lead.companyOrClient?.trim() || null,
+      source: input.lead.source?.trim() || null,
+      notes: input.lead.notes?.trim() || null,
+    })
+    .select("id")
+    .single();
 
-  // Placeholder return (will be replaced with actual DB operations in next step)
+  if (leadError) {
+    return {
+      success: false,
+      error: `Failed to create lead: ${leadError.message}`,
+    };
+  }
+
+  if (!leadData || !leadData.id) {
+    return {
+      success: false,
+      error: "Failed to create lead: No lead ID returned",
+    };
+  }
+
+  // Step 2: Create contact record
+  // Combine first_name + last_name for display_name
+  const displayName = input.primaryContact.lastName?.trim()
+    ? `${input.primaryContact.firstName.trim()} ${input.primaryContact.lastName.trim()}`
+    : input.primaryContact.firstName.trim();
+
+  const { data: contactData, error: contactError } = await supabase
+    .from("contacts")
+    .insert({
+      display_name: displayName,
+      client_type: input.primaryContact.clientType.trim(),
+      email: input.primaryContact.email?.trim() || null,
+      phone: input.primaryContact.phone?.trim() || null,
+      company: input.primaryContact.company?.trim() || null,
+      role: input.primaryContact.title?.trim() || null,
+      notes: input.primaryContact.notes?.trim() || null,
+    })
+    .select("id")
+    .single();
+
+  if (contactError) {
+    return {
+      success: false,
+      error: `Failed to create contact: ${contactError.message}`,
+    };
+  }
+
+  if (!contactData || !contactData.id) {
+    return {
+      success: false,
+      error: "Failed to create contact: No contact ID returned",
+    };
+  }
+
+  // Step 3: Create contact_links record
+  const { error: linkError } = await supabase.from("contact_links").insert({
+    contact_id: contactData.id,
+    lead_id: leadData.id,
+    relationship: "primary",
+  });
+
+  if (linkError) {
+    return {
+      success: false,
+      error: `Failed to link contact to lead: ${linkError.message}`,
+    };
+  }
+
+  // Revalidate paths
+  revalidatePath("/leads");
+  revalidatePath("/ops");
+
   return {
     success: true,
-    message: "Validation passed (database writes deferred to next step)",
   };
 }
 
