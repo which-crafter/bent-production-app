@@ -44,7 +44,47 @@ This module explicitly **does not**:
 
 ---
 
-## 3. Data Surface (Current Reality)
+## 3. Migrations Added in Module 1
+
+### 0001_init.sql
+- Purpose: Initial schema creation
+- Creates `leads`, `projects`, `contacts`, `contact_links` tables
+- Defines CHECK constraints for status enums
+- Creates indexes
+
+### 0002_project_code.sql
+- Purpose: Project code generation and lead-to-project conversion
+- Creates `project_code_counters` table
+- Creates `next_project_code()` function
+- Creates `convert_lead_to_project()` RPC function
+
+### 0003_updated_at_trigger.sql
+- Purpose: Automatic updated_at timestamp management
+- Creates `set_updated_at()` trigger function
+- Creates `leads_set_updated_at` trigger on `leads` table
+
+### 0004_lead_contact.sql
+- Purpose: Add contact tracking fields to leads table
+- Adds `last_contacted_at` column to `leads` table
+- Adds `last_contact_note` column to `leads` table
+
+### 0005_convert_sets_qualified.sql
+- Purpose: Ensure lead remains qualified after conversion
+- Updates `convert_lead_to_project()` function to explicitly set lead status to 'qualified' after conversion
+
+### 0006_contacts_client_type.sql
+- Purpose: Add client type classification to contacts
+- Adds `client_type` column to `contacts` table
+- Adds CHECK constraint for allowed client_type values: 'homeowner', 'designer', 'contractor', 'dealer', 'architect', 'retail', 'other'
+
+### 0007_leads_source_required.sql
+- Purpose: Enforce leads.source as required (Module 1 locked decision)
+- Backfills existing NULL values to 'unknown'
+- Sets `leads.source` NOT NULL
+
+---
+
+## 4. Data Surface (Current Reality)
 
 ### Current Tables
 
@@ -53,7 +93,7 @@ This module explicitly **does not**:
 - `name` (text, not null)
 - `company_or_client` (text, nullable)
 - `status` (text, not null, default 'new', CHECK: 'new' | 'contacted' | 'qualified' | 'lost')
-- `source` (text, nullable)
+- `source` (text, not null) — set to NOT NULL in migration 0007
 - `notes` (text, nullable)
 - `created_at` (timestamptz, not null, default now())
 - `updated_at` (timestamptz, not null, default now())
@@ -99,7 +139,7 @@ This module explicitly **does not**:
 
 ---
 
-## 4. Decisions Locked
+## 5. Decisions Locked
 
 - A lead must have a primary contact
 - A lead has only one primary contact
@@ -124,7 +164,7 @@ This module explicitly **does not**:
 
 ---
 
-## 5. Portion Breakdown
+## 6. Portion Breakdown
 
 ### Portion A — Lead Creation
 - Lead form structure
@@ -158,7 +198,7 @@ This module explicitly **does not**:
 
 ---
 
-## 6. Current State (as of today)
+## 7. Current State (as of today)
 
 ### Portion E — COMPLETE
 - **Dashboard/Homepage:** Basic homepage exists at `/` (web/src/app/(app)/page.tsx)
@@ -171,7 +211,7 @@ This module explicitly **does not**:
   - Reuses components from `/ops/_components` (intentional for Module 1E)
   - Renders CreateLeadForm and LeadsTable
 
-### Portion A — IN PROGRESS
+### Portion A — COMPLETE
 
 **Step A1: Validation structure (COMPLETE)**
 - `createLeadWithPrimaryContact` function exists in `web/src/app/ops/actions.ts`
@@ -180,19 +220,30 @@ This module explicitly **does not**:
   - Primary contact first name required
   - Primary contact client type required
   - At least one of email or phone required
-- **Database writes are NOT yet implemented** (deferred to Step B1)
-- Duplicate detection NOT yet implemented (deferred to future step)
 
 **Step A2: Database schema preparation (COMPLETE)**
 - Migration 0006 adds `client_type` column to `contacts` table
 - CHECK constraint enforces allowed values: `'homeowner' | 'designer' | 'contractor' | 'dealer' | 'architect' | 'retail' | 'other'`
+- Migration 0007 enforces `leads.source` as NOT NULL (backfills NULLs to 'unknown')
+
+**Step B1: Database writes (COMPLETE)**
+- `createLeadWithPrimaryContact` database writes implemented
+- Writes lead record to `leads` table
+- Creates contact record in `contacts` table
+- Creates `contact_links` record linking lead to contact with relationship 'primary'
+- Handles errors explicitly at each step
+
+**Step B2: UI form (COMPLETE)**
+- CreateLeadForm now uses `createLeadWithPrimaryContact`
+- Source is required in the UI and is passed as non-null
+- Email/Phone requirement is clarified in UI ("Email or Phone is required (at least one)")
+- Company/Client input is written to BOTH `leads.company_or_client` and `contacts.company`
+- Title field removed from intake UI
+- Lead name placeholder provides suggested template (e.g., "Ken — Cabinet quote — Glendale")
 
 **Pending:**
-- Database writes for lead creation (leads + contacts + contact_links)
+- Duplicate detection logic (warn-only; check email first, then phone)
 - Decision needed: whether to add `first_name`/`last_name` columns to contacts table or use `display_name` (currently schema uses `display_name`)
-- Duplicate detection logic
-- UI form for `createLeadWithPrimaryContact`
-- **Note:** Intake UX is a SINGLE form flow that writes to multiple tables (leads + contacts + contact_links) with shared company input and two notes fields
 
 ### Portions B, C, D — PARTIAL
 - **Status transitions and inline editing:** Implemented on `/ops` (admin surface) but not yet promoted to `/leads`
@@ -201,7 +252,7 @@ This module explicitly **does not**:
 
 ---
 
-## 7. Deferred / Parking Lot
+## 8. Deferred / Parking Lot
 
 - **Companies table / normalization deferred to Module 2:** The `leads.company_or_client` and `contacts.company` fields are denormalized text fields. Normalization into a separate `companies` table is explicitly deferred to Module 2.
 - Duplicate detection implementation (validation structure exists, but actual duplicate checking logic not yet implemented)
@@ -215,42 +266,27 @@ This module explicitly **does not**:
 
 ---
 
-## 8. Next Steps (Only the next executable steps)
+## 9. Next Steps (Only the next executable steps)
 
-1. **Portion A Step B1:** Implement database writes for `createLeadWithPrimaryContact`
-   - Write lead record to `leads` table
-   - Create contact record in `contacts` table (may need to add `first_name`/`last_name` columns if not using `display_name`)
-   - Create `contact_links` record linking lead to contact with appropriate relationship
-   - Handle transaction/rollback on errors
-   - Update function to return proper success/error response
-
-2. **Portion A Step B2:** Create UI form component for `createLeadWithPrimaryContact`
-   - Build form in `/leads` page or separate component
-   - Include all required fields (lead name, contact first name, client type, email/phone)
-   - Include optional fields (last name, company, city, address, notes)
-   - **Note:** Single form flow writes to leads + contacts + contact_links with shared company input and two notes fields (lead notes and contact notes)
-   - Wire up to `createLeadWithPrimaryContact` action
-   - Handle validation errors and success states
-
-3. **Portion A Step B3:** Replace or deprecate old `createLead` function
-   - Update `/leads` page to use new form/action
-   - Remove or mark old `CreateLeadForm` as deprecated
-   - Ensure all lead creation flows through primary contact path
-
-4. **Portion A Step C1:** Implement duplicate detection
+1. **Portion A Step C1:** Implement duplicate detection
    - Add duplicate check logic to `createLeadWithPrimaryContact` (before DB writes)
    - Check for email match first, then phone match
    - Return warning (not error) with existing lead info
    - Allow user to proceed anyway
 
-5. **Portion A Step C2:** Build duplicate warning UI
+2. **Portion A Step C2:** Build duplicate warning UI
    - Show warning modal/alert when duplicates detected
    - Display existing lead name and quick-open option
    - Allow user to proceed or cancel
 
+3. **Portion B — Lead Management:** Define and lock decisions
+   - Status transitions and inline editing behavior
+   - Stale logic definition
+   - Filtering and visibility rules
+
 ---
 
-## 9. Cursor Prompts
+## 10. Cursor Prompts
 
 ### Current State Export Prompt
 

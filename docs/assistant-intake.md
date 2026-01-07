@@ -354,7 +354,7 @@ This algorithm defines **what we are building**, independent of implementation d
 
 ### Backend / Data
 - Supabase (Postgres)
-- SQL migrations
+- SQL migrations (live at `/supabase/migrations`, NOT under `/web`)
 - Database RPC functions where appropriate
 - RLS deferred to later module
 
@@ -478,6 +478,8 @@ All must be true:
 
 All portion plans, decisions, next steps, deferred items, and current state live in the module-specific document. This intake doc only tracks module status and system-wide rules.
 
+**Module 1 Portion A status:** Lead creation flow now uses `createLeadWithPrimaryContact` end-to-end (DB writes + UI form complete). `leads.source` is required at the database level via migration `0007_leads_source_required.sql` (backfills NULLs to 'unknown', then sets NOT NULL).
+
 ---
 
 ## Module Breakdown Strategy (How We Build)
@@ -569,6 +571,8 @@ Task‑level execution lists are ephemeral unless explicitly promoted.
    - The user will upload `docs/assistant-intake.md` only at the start of the next chat
    - The assistant must follow CHAT AUTO-BOOTSTRAP / NEW CHAT STARTUP PROTOCOL to request the rest (Cursor export + module doc) in the next chat
    - Do NOT output any starter snippet
+
+- **Resume point:** Module 1 → Portion B (Lead Management) — lock decisions first, then implement.
 
 ---
 
