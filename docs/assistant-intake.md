@@ -92,7 +92,10 @@ If a prior decision creates friction, it must be **flagged**, not changed.
      Please paste the contents of Module X document: <path>
      I need to see the current module plan, decisions, next steps, and deferred items before proceeding.
      ```
-   - Example (for current active module): "Please paste the contents of Module 1 document: docs/modules/module-1-leads.md"
+   - Example (for current active module only — do not reuse verbatim):
+     ```
+     Please paste the contents of Module 1 document: docs/modules/module-1-leads.md
+     ```
 
 6. **Refuse to proceed:**
    - **DO NOT** proceed with any planning or implementation work
@@ -151,7 +154,10 @@ If a prior decision creates friction, it must be **flagged**, not changed.
      Please paste the contents of Module X document: <path>
      I need to see the current module plan, decisions, next steps, and deferred items before proceeding.
      ```
-   - Example (for current active module): "Please paste the contents of Module 1 document: docs/modules/module-1-leads.md"
+   - Example (for current active module only — do not reuse verbatim):
+     ```
+     Please paste the contents of Module 1 document: docs/modules/module-1-leads.md
+     ```
 
 4. **After receiving both:**
    - Reconcile current reality vs module plan briefly
@@ -266,6 +272,13 @@ Cursor prompts must be tightly scoped:
 
 ### Code Changes
 - All code changes must be committed in small, incremental commits with lint/build verification.
+
+### Canonical Document Editing Rule (Locked)
+- Canonical documents (`assistant-intake.md` and `docs/modules/*.md`) must ONLY be edited using surgical patch prompts.
+- Cursor instructions must specify exact sections to edit.
+- Full-document rewrites are prohibited.
+- Cursor must output a unified diff for review before commit.
+- Any assistant that cannot comply must stop and explain why.
 
 ---
 
@@ -552,14 +565,10 @@ Task‑level execution lists are ephemeral unless explicitly promoted.
    - Update when moving to a new module (e.g., Module 1 LOCKED, Module 2 ACTIVE)
    - Do not update for incremental progress within a module
 
-5. **Output a ready-to-use "next chat starter" snippet:**
-   - Provide a short snippet the user can paste at the start of the next chat
-   - Format:
-     ```
-     Upload docs/assistant-intake.md only.
-     Active module: Module 1 (docs/modules/module-1-leads.md)
-     ```
-   - Keep it brief and focused
+5. **Instruct user on next chat startup:**
+   - The user will upload `docs/assistant-intake.md` only at the start of the next chat
+   - The assistant must follow CHAT AUTO-BOOTSTRAP / NEW CHAT STARTUP PROTOCOL to request the rest (Cursor export + module doc) in the next chat
+   - Do NOT output any starter snippet
 
 ---
 
