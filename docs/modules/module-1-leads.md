@@ -251,7 +251,8 @@ This module explicitly **does not**:
 - Duplicate detection logic (warn-only; check email first, then phone)
 - Decision needed: whether to add `first_name`/`last_name` columns to contacts table or use `display_name` (currently schema uses `display_name`)
 
-### Portion B — COMPLETE
+### Portion B — COMPLETE and VERIFIED
+- **Status:** Portion B is COMPLETE and VERIFIED against current repo state
 - **Status transitions and inline editing:** StatusSelect component implemented with auto-save, optimistic UI updates, and error recovery
 - **Stale logic:** Implemented in LeadsTable component (30+ days since update)
 - **Filtering and visibility:** LeadFilters component implemented with status checkboxes and stale/converted toggles
@@ -279,16 +280,14 @@ This module explicitly **does not**:
 
 ## 9. Next Steps (Only the next executable steps)
 
-1. **Portion A Step C1:** Implement duplicate detection
-   - Add duplicate check logic to `createLeadWithPrimaryContact` (before DB writes)
-   - Check for email match first, then phone match
-   - Return warning (not error) with existing lead info
-   - Allow user to proceed anyway
+**RESUME NOTE:**
+- **Next active portion:** Portion C — Contact Logging
+- **Portion A (Duplicate Detection) is DEFERRED:** Must not be worked on unless the user explicitly says so
 
-2. **Portion A Step C2:** Build duplicate warning UI
-   - Show warning modal/alert when duplicates detected
-   - Display existing lead name and quick-open option
-   - Allow user to proceed or cancel
+1. **Portion C — Contact Logging:** (Next active work)
+   - Review and enhance contact logging functionality as needed
+   - Ensure append-only log behavior is properly implemented
+   - Verify timestamped entries and relationship to staleness calculation
 
 ---
 
