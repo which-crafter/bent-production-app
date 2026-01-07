@@ -225,7 +225,26 @@ This module explicitly **does not**:
 
 ---
 
-## 7. Execution Checklist
+## 7. Current State (as of today)
+
+### Portion A — COMPLETE
+- **Migration applied:** `supabase/migrations/0008_projects_lifecycle_state.sql`
+- **Columns added:**
+  - `projects.lifecycle_state` (text NOT NULL DEFAULT 'quote')
+  - `projects.prev_lifecycle_state` (text NULL)
+  - `projects.hold_reason` (text NULL)
+  - `projects.hold_at` (timestamptz NULL)
+  - `projects.lifecycle_override_reason` (text NULL)
+- **CHECK constraints present:**
+  - `projects_lifecycle_state_check` (enforces: 'quote', 'awarded', 'released', 'active', 'closed', 'hold')
+  - `projects_prev_lifecycle_state_check` (enforces: NULL or 'quote', 'awarded', 'released', 'active', 'closed' — excludes 'hold')
+- **Note:** Existing historical test projects may have `status='active'` but `lifecycle_state='quote'` due to legacy defaults. `lifecycle_state` is authoritative going forward.
+
+### Portions B, C, D — NOT STARTED
+
+---
+
+## 8. Execution Checklist
 
 ### Portion A — Database Schema & Migrations
 - [ ] Schema change required to add `projects.lifecycle_state` column
@@ -285,7 +304,7 @@ This module explicitly **does not**:
 
 ---
 
-## 8. Exit Criteria
+## 9. Exit Criteria
 
 All must be true:
 - [ ] Migration files created and tested for all new columns
@@ -306,7 +325,7 @@ All must be true:
 
 ---
 
-## 9. Module Lock
+## 10. Module Lock
 
 **Status:** NOT LOCKED
 
@@ -320,7 +339,7 @@ This module is not yet locked. Lock confirmation will be added here after:
 
 ---
 
-## 10. What's Next
+## 11. What's Next
 
 **Next module:** Module 3 — Estimates & Sales Orders
 
@@ -336,7 +355,7 @@ This module is not yet locked. Lock confirmation will be added here after:
 
 ---
 
-## 11. Deferred / Parking Lot
+## 12. Deferred / Parking Lot
 
 - Editing of other project fields (beyond name and client_name)
 - Project creation UI (currently only via lead conversion)
