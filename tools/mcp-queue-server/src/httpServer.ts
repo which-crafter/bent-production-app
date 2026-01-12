@@ -31,6 +31,15 @@ server.connect(transport).catch((err: unknown) => {
   process.exit(1);
 });
 
+// Health check endpoint
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "bent-mcp-queue",
+    ts: Date.now(),
+  });
+});
+
 app.options("/mcp", (_req, res) => {
   res.sendStatus(204);
 });
