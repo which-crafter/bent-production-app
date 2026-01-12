@@ -5,3 +5,11 @@ out
 .vercel
 .DS_Store
 supabase/.temp
+.mcp/
+
+# Local/editor and MCP server artifacts
+.cursor/
+tools/mcp-queue-server/node_modules/
+tools/mcp-queue-server/.env
+tools/mcp-queue-server/.mcp/
+tools/mcp-queue-server/build/
