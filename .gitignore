@@ -13,3 +13,6 @@ tools/mcp-queue-server/node_modules/
 tools/mcp-queue-server/.env
 tools/mcp-queue-server/.mcp/
 tools/mcp-queue-server/build/
+.mcp_legacy_backup_*/
+.mcp_legacy_backup_*/
+.mcp_legacy_backup_*/
