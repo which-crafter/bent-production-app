@@ -24,7 +24,7 @@ The assistant acts as:
 The assistant may **not**:
 - Redesign prior modules without explicit instruction (recomendations are allowed)
 - Jump ahead to future modules
-- Add speculative or “future-proofing” features unless requested (you may make suggestions, but cofirmation required to implement)
+- Add speculative or "future-proofing" features unless requested (you may make suggestions, but cofirmation required to implement)
 - Modify locked decisions silently
 
 If a prior decision creates friction, it must be **flagged**, not changed.
@@ -282,62 +282,9 @@ Cursor prompts must be tightly scoped:
 
 ---
 
-## High‑Level System Algorithm (Intent)
+## System Algorithm
 
-This algorithm defines **what we are building**, independent of implementation details.
-
-1. **Lead Intake**
-   - Capture inbound opportunities
-   - Track status, contact attempts, and staleness
-   - Convert qualified leads into projects
-
-2. **Project Core**
-   - Create a stable source of truth per job
-   - Generate project identifiers
-   - Track lifecycle state
-
-3. **Estimates (Core Domain)**
-   - Estimates are created only after a lead is converted to a project
-   - Estimates are immutable once saved
-   - Estimates are versioned (v1, v2, v3…)
-   - One or more estimates may be marked as “current”
-   - Selecting multiple current estimates triggers an explicit warning
-   - Estimates may be revised only by creating a new version (copy existing estimate is default for a new version, but a new fresh estimate should be an option and continue the versions on a separate branch)
-
-4. **Sales Orders (Client‑Facing)**
-   - Sales orders are generated from estimates
-   - Sales orders may be created from:
-     - An entire estimate
-     - Selected line items from a single estimate
-     - Selected line items across multiple estimates
-     - Multiple entire estimates (rare)
-   - Sales orders are client‑facing documents
-   - Sales orders are the authoritative input for purchasing and production
-
-5. **Purchasing**
-   - Purchasing needs are generated from sales order line items
-   - Editable purchasing queues exist prior to release
-   - Purchasing may be partially released over time
-
-6. **Production Phases**
-   - Production phases represent operational work streams
-   - Multiple phases may be active simultaneously
-   - Phases include engineering, purchasing, milling, etc.
-   - Partial releases (engineering vs production) are supported
-
-7. **Time Tracking (MVP)**
-   - Optional project‑level time tracking
-   - Time may be attributed to production phases
-   - Task‑level time tracking deferred
-
-8. **Multi‑User & Permissions**
-   - System designed for concurrent users
-   - RLS and role‑based permissions deferred to later module
-
-9. **Reporting & Hardening**
-   - Visibility into bottlenecks
-   - Cleanup, validation, and stabilization
-   - Long‑term maintainability
+The high-level system algorithm (what we are building, independent of implementation details) is documented in [docs/architecture/system-algorithm.md](../architecture/system-algorithm.md). This document defines the canonical intent for all modules.
 
 ---
 
@@ -613,6 +560,12 @@ To move to the next module, the user will explicitly say:
 "Proceed to Module X. Use the current locked plan. Do not redesign prior modules."
 
 Only after this command may the next module be expanded.
+
+---
+
+## MCP Intake Persistence
+
+This document can be persisted via the MCP `intake_put` tool, which writes to `.mcp/bootstrap/intake.json` at the repo root. The tool accepts the full markdown contents and returns both a relative path (`.mcp/bootstrap/intake.json`) and an absolute path for verification. Use `intake_get` to retrieve the persisted version. See [docs/mcp/README.md](../mcp/README.md) for setup and usage.
 
 ---
 
