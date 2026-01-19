@@ -21,6 +21,9 @@ npm install
 npm run dev
 ```
 
+## MCP Server
+For MCP queue and intake tools, see [docs/mcp/README.md](docs/mcp/README.md).
+
 ## Security rules (non-negotiable)
 - No secrets in repo
 - No `.env*` committed
