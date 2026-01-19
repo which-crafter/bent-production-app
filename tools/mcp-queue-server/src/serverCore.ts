@@ -2,12 +2,18 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 export type BentQueueServerOptions = {
   repoRoot?: string;
 };
+
+// Module-level storage for computed paths
+let _REPO_ROOT: string | null = null;
+let _MCP_DIR: string | null = null;
 
 type QueueItemStatus = "queued" | "claimed" | "cancelled";
 
@@ -62,8 +68,79 @@ export function createBentQueueServer(
 
   // ---------- Paths & helpers ----------
 
-  const REPO_ROOT = options.repoRoot || process.env.BENT_REPO_ROOT || process.cwd();
+  // Repo root resolution precedence:
+  // 1. options.repoRoot (explicit parameter)
+  // 2. process.env.BENT_REPO_ROOT (environment variable)
+  // 3. Auto-detect by walking up from server file location
+  // This ensures `.mcp` is ALWAYS written to repo root, never under tools/mcp-queue-server/
+  let REPO_ROOT =
+    options.repoRoot ||
+    process.env.BENT_REPO_ROOT;
+  
+  // If not explicitly set, detect repo root from server file location
+  if (!REPO_ROOT) {
+    // Get the directory where this server code is located (will be build/ in compiled output)
+    const serverFile = fileURLToPath(import.meta.url);
+    let currentDir = path.dirname(serverFile);
+    
+    // Walk up the directory tree to find the repo root
+    // Look for a directory that contains tools/mcp-queue-server as a subdirectory
+    for (let i = 0; i < 10; i++) {
+      const toolsDir = path.join(currentDir, "tools");
+      const mcpQueueServerDir = path.join(toolsDir, "mcp-queue-server");
+      
+      try {
+        const stats = fsSync.statSync(mcpQueueServerDir);
+        if (stats.isDirectory()) {
+          // Found tools/mcp-queue-server, so currentDir is the repo root
+          REPO_ROOT = currentDir;
+          break;
+        }
+      } catch {
+        // Directory doesn't exist, continue searching
+      }
+      
+      const parentDir = path.dirname(currentDir);
+      if (parentDir === currentDir) {
+        // Reached filesystem root, fallback to process.cwd()
+        REPO_ROOT = process.cwd();
+        break;
+      }
+      currentDir = parentDir;
+    }
+    
+    // Final fallback: check if current working directory is tools/mcp-queue-server
+    if (!REPO_ROOT) {
+      const cwdNormalized = path.normalize(process.cwd());
+      const cwdBasename = path.basename(cwdNormalized);
+      const cwdParentBasename = path.basename(path.dirname(cwdNormalized));
+      if (cwdBasename === "mcp-queue-server" && cwdParentBasename === "tools") {
+        REPO_ROOT = path.resolve(process.cwd(), "..", "..");
+      } else {
+        REPO_ROOT = process.cwd();
+      }
+    }
+  }
+  
+  // Ensure REPO_ROOT is absolute and normalized
+  REPO_ROOT = path.resolve(REPO_ROOT);
+  
+  // Hard safety correction: ensure we're not in tools/mcp-queue-server or tools/mcp-queue-server/build
+  const normalized = path.normalize(REPO_ROOT);
+  const segments = normalized.split(path.sep).filter(Boolean);
+  const lastSegment = segments[segments.length - 1];
+  const secondLastSegment = segments.length >= 2 ? segments[segments.length - 2] : null;
+  
+  if (lastSegment === "mcp-queue-server" && secondLastSegment === "tools") {
+    REPO_ROOT = path.resolve(REPO_ROOT, "..", "..");
+  } else if (lastSegment === "build" && secondLastSegment === "mcp-queue-server" && segments.length >= 3 && segments[segments.length - 3] === "tools") {
+    REPO_ROOT = path.resolve(REPO_ROOT, "..", "..", "..");
+  }
+  
   const MCP_DIR = path.join(REPO_ROOT, ".mcp");
+  // Store in module-level variables for export
+  _REPO_ROOT = REPO_ROOT;
+  _MCP_DIR = MCP_DIR;
   const QUEUE_FILE = path.join(MCP_DIR, "queue.jsonl");
   const POSTBACK_FILE = path.join(MCP_DIR, "postback.jsonl");
 
@@ -322,5 +399,121 @@ export function createBentQueueServer(
     }
   );
 
+  // ---------- Tools: debug_paths ----------
+
+  server.tool(
+    "debug_paths",
+    "Debug path resolution for repo root and MCP directory.",
+    {},
+    async () => {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              ok: true,
+              repo_root: REPO_ROOT,
+              mcp_dir: MCP_DIR,
+              cwd: process.cwd(),
+              env_BENT_REPO_ROOT: process.env.BENT_REPO_ROOT ?? null,
+            }, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // ---------- Tools: intake_put ----------
+
+  server.tool(
+    "intake_put",
+    "Write assistant intake markdown to bootstrap file.",
+    {
+      assistant_intake_md: z.string().describe("Assistant intake markdown content"),
+      created_at_iso: z.string().optional(),
+    },
+    async (args) => {
+      await ensureMcpDir();
+      const BOOTSTRAP_DIR = path.join(MCP_DIR, "bootstrap");
+      await fs.mkdir(BOOTSTRAP_DIR, { recursive: true });
+      const INTAKE_FILE = path.join(BOOTSTRAP_DIR, "intake.json");
+
+      const created_at_iso = args.created_at_iso || new Date().toISOString();
+      const intakeData = {
+        created_at_iso,
+        assistant_intake_md: args.assistant_intake_md,
+      };
+
+      await fs.writeFile(INTAKE_FILE, JSON.stringify(intakeData, null, 2), "utf8");
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              ok: true,
+              path: ".mcp/bootstrap/intake.json",
+              absolute_path: INTAKE_FILE,
+              created_at_iso,
+            }, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // ---------- Tools: intake_get ----------
+
+  server.tool(
+    "intake_get",
+    "Read assistant intake markdown from bootstrap file.",
+    {},
+    async () => {
+      await ensureMcpDir();
+      const BOOTSTRAP_DIR = path.join(MCP_DIR, "bootstrap");
+      const INTAKE_FILE = path.join(BOOTSTRAP_DIR, "intake.json");
+
+      try {
+        const content = await fs.readFile(INTAKE_FILE, "utf8");
+        const intakeData = JSON.parse(content);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                ok: true,
+                created_at_iso: intakeData.created_at_iso,
+                assistant_intake_md: intakeData.assistant_intake_md,
+              }, null, 2),
+            },
+          ],
+        };
+      } catch (err: any) {
+        if (err.code === "ENOENT") {
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  ok: false,
+                  error: "No intake published",
+                }, null, 2),
+              },
+            ],
+          };
+        }
+        throw err;
+      }
+    }
+  );
+
   return server;
+}
+
+export function getBentQueuePaths(): { repoRoot: string; mcpDir: string } {
+  if (_REPO_ROOT === null || _MCP_DIR === null) {
+    throw new Error("BentQueueServer not initialized. Call createBentQueueServer() first.");
+  }
+  return { repoRoot: _REPO_ROOT, mcpDir: _MCP_DIR };
 }

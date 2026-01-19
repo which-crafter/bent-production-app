@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc && chmod 755 build/index.js",
-    "start:http": "node build/httpServer.js"
+    "start:http": "BENT_REPO_ROOT=../.. node build/httpServer.js"
   },
   "keywords": [],
   "author": "",

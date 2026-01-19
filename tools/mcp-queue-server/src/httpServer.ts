@@ -5,7 +5,7 @@ import process from "node:process";
 
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
-import { createBentQueueServer } from "./serverCore.js";
+import { createBentQueueServer, getBentQueuePaths } from "./serverCore.js";
 
 const API_KEY = process.env.BENT_MCP_API_KEY;
 
@@ -18,7 +18,12 @@ const server = createBentQueueServer();
 
 const app = express();
 
-app.use(express.json());
+app.post("/probe", express.raw({ type: "*/*", limit: "5mb" }), (req, res) => {
+  const bodyLength = Buffer.isBuffer(req.body) ? req.body.length : 0;
+  res.status(200).json({ ok: true, bytes_received: bodyLength });
+});
+
+app.use(express.json({ limit: '2mb' }));
 
 // Stateless transport: no server-issued sessions.
 const transport = new StreamableHTTPServerTransport({
@@ -37,6 +42,17 @@ app.get("/", (_req, res) => {
     ok: true,
     service: "bent-mcp-queue",
     ts: Date.now(),
+  });
+});
+
+app.get("/debug/core-paths", (_req, res) => {
+  const paths = getBentQueuePaths();
+  res.status(200).json({
+    ok: true,
+    repo_root: paths.repoRoot,
+    mcp_dir: paths.mcpDir,
+    cwd: process.cwd(),
+    env_BENT_REPO_ROOT: process.env.BENT_REPO_ROOT ?? null,
   });
 });
 
