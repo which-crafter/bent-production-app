@@ -251,7 +251,25 @@ This module explicitly **does not**:
 - **Validation rules enforced at application layer**
 - **No UI changes included in this portion**
 
-### Portions B, C, D — NOT STARTED
+### Portion C — COMPLETE
+- **Projects list page implemented:** `web/src/app/(app)/projects/page.tsx`
+  - Server Component that queries Supabase directly
+  - Selects: id, project_code, name, client_name, lifecycle_state
+  - Orders by project_code ASC
+  - Handles errors and empty states
+- **ProjectsTable component:** `web/src/app/(app)/projects/_components/ProjectsTable.tsx`
+  - Client component with lifecycle state filtering
+  - Filter options: All, quote, awarded, released, active, closed, hold
+  - Default filter: "All"
+  - Mobile-first responsive layout
+  - Displays: project_code, name, client_name, lifecycle_state
+- **Navigation updated:** `web/src/app/(app)/_components/AppTabs.tsx`
+  - Added "Projects" tab pointing to `/projects`
+- **Types updated:** `web/src/app/ops/types.ts`
+  - Added `LifecycleState` type
+  - Updated `ProjectRow` and `Project` interfaces to include lifecycle_state
+
+### Portion D — NOT STARTED
 
 ---
 

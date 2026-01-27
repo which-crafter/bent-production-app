@@ -19,6 +19,7 @@ export function AppTabs() {
   const tabs = [
     { label: "Home", href: "/" },
     { label: "Leads", href: "/leads" },
+    { label: "Projects", href: "/projects" },
   ];
 
   return (

@@ -349,8 +349,8 @@ Lifecycle states are strictly forward‑moving unless explicitly reopened.
 | Module | Name | Status |
 |--------|------|--------|
 | 0 | Foundation | LOCKED |
-| 1 | Leads & Intake | ACTIVE |
-| 2 | Projects Core | NOT_STARTED |
+| 1 | Leads & Intake | LOCKED |
+| 2 | Projects Core | ACTIVE |
 | 3 | Estimates & Sales Orders | NOT_STARTED |
 | 4 | Purchasing & Production Phases | NOT_STARTED |
 | 5 | Tasks & Time Tracking | NOT_STARTED |

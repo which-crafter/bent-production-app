@@ -11,6 +11,9 @@ export type LeadStatus = "new" | "contacted" | "qualified" | "lost";
 /** Project status values matching database CHECK constraint */
 export type ProjectStatus = "active" | "on_hold" | "closed";
 
+/** Project lifecycle state values matching database CHECK constraint (Module 2) */
+export type LifecycleState = "quote" | "awarded" | "released" | "active" | "closed" | "hold";
+
 /**
  * Database schema type for leads table (snake_case).
  * Matches the exact column names returned from Supabase queries.
@@ -37,6 +40,7 @@ export interface ProjectRow {
   name: string;
   client_name: string | null;
   status: ProjectStatus;
+  lifecycle_state: LifecycleState;
 }
 
 /**
@@ -66,5 +70,6 @@ export interface Project {
   clientName?: string;
   status: ProjectStatus;
   leadId: string;
+  lifecycleState: LifecycleState;
 }
 
