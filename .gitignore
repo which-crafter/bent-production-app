@@ -15,3 +15,7 @@ tools/mcp-queue-server/.mcp/
 tools/mcp-queue-server/build/
 .mcp_legacy_backup_*/
 .mcp_old_*/
+
+# Cursor / local export artifacts
+CURSOR_EXPORT_*.md
+docs/_cursor_exports/
