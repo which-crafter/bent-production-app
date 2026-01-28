@@ -465,6 +465,7 @@ export async function updateProjectLifecycleState(input: {
 
   // Revalidate paths
   revalidatePath('/projects');
+  revalidatePath(`/projects/${input.projectId}`);
   revalidatePath('/ops');
 
   return { ok: true };
@@ -519,6 +520,7 @@ export async function updateProjectBasics(input: {
 
   // Revalidate paths
   revalidatePath('/projects');
+  revalidatePath(`/projects/${input.projectId}`);
   revalidatePath('/ops');
 
   return { ok: true };

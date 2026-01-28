@@ -269,7 +269,29 @@ This module explicitly **does not**:
   - Added `LifecycleState` type
   - Updated `ProjectRow` and `Project` interfaces to include lifecycle_state
 
-### Portion D — NOT STARTED
+### Portion D — COMPLETE
+- **Project detail page implemented:** `web/src/app/(app)/projects/[id]/page.tsx`
+  - Server Component that fetches single project by ID
+  - Selects all project fields including lifecycle_state and prev_lifecycle_state
+  - Handles not found with Next.js notFound()
+- **ProjectDetail component:** `web/src/app/(app)/projects/_components/ProjectDetail.tsx`
+  - Displays all project fields (read-only except name/client_name)
+  - Integrates ProjectNameEditor and LifecycleChangeControl
+  - Mobile-responsive layout
+- **ProjectNameEditor component:** `web/src/app/(app)/projects/_components/ProjectNameEditor.tsx`
+  - Inline editing for `projects.name` and `projects.client_name` only
+  - Uses `updateProjectBasics` server action
+  - Error handling and success feedback
+- **LifecycleChangeControl component:** `web/src/app/(app)/projects/_components/LifecycleChangeControl.tsx`
+  - Forward-only transition UI (default mode)
+  - Hold entry UI (with optional reason input)
+  - Hold resume UI (only shows resume option to prev_lifecycle_state)
+  - Override mode UI (toggle + reason input required)
+  - Visual state indicators
+  - Disabled states for invalid transitions
+  - Uses `updateProjectLifecycleState` server action
+- **Server actions updated:** `web/src/app/ops/actions.ts`
+  - `updateProjectLifecycleState` and `updateProjectBasics` now revalidate detail page path
 
 ---
 
