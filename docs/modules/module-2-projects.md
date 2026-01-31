@@ -293,6 +293,11 @@ This module explicitly **does not**:
 - **Server actions updated:** `web/src/app/ops/actions.ts`
   - `updateProjectLifecycleState` and `updateProjectBasics` now revalidate detail page path
 
+### Portion E — COMPLETE
+- **List → detail navigation:** `web/src/app/(app)/projects/_components/ProjectsTable.tsx`
+  - Project code and name are clickable (Next.js `<Link>` to `/projects/[id]`)
+  - Uses existing UUID `id` from query; filter, sort, layout, mobile responsive unchanged
+
 ---
 
 ## 8. Execution Checklist
@@ -378,15 +383,22 @@ All must be true:
 
 ## 10. Module Lock
 
-**Status:** NOT LOCKED
+**Status:** LOCKED (Module 2 COMPLETED)
 
-This module is not yet locked. Lock confirmation will be added here after:
-- All exit criteria are met
-- User confirms module completion
-- All decisions are frozen
+Module 2 is complete. All portions (A–E) implemented and browser-validated. Decisions are frozen.
 
-**Frozen decisions summary (to be completed at lock):**
-- [To be filled at module lock]
+**Frozen decisions summary:**
+- Lifecycle states: quote, awarded, released, active, closed, hold
+- Forward-only transitions by default; Hold semantics; Override with reason
+- New column `projects.lifecycle_state` (existing `projects.status` not repurposed)
+- Project list `/projects`, detail `/projects/[id]`, list→detail navigation via Link
+- Edit only `projects.name` and `projects.client_name`; lifecycle enforced in app layer
+
+**Acceptance checklist (browser validated):**
+- [x] `/projects` lists projects; lifecycle filter works; sort by project_code ASC
+- [x] Project code and name link to `/projects/[id]`; detail loads
+- [x] Detail shows all fields; name/client_name editable; lifecycle control works (forward, Hold, resume, override)
+- [x] Projects tab in nav; mobile responsive
 
 ---
 

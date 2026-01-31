@@ -350,7 +350,7 @@ Lifecycle states are strictly forward‑moving unless explicitly reopened.
 |--------|------|--------|
 | 0 | Foundation | LOCKED |
 | 1 | Leads & Intake | LOCKED |
-| 2 | Projects Core | ACTIVE |
+| 2 | Projects Core | LOCKED |
 | 3 | Estimates & Sales Orders | NOT_STARTED |
 | 4 | Purchasing & Production Phases | NOT_STARTED |
 | 5 | Tasks & Time Tracking | NOT_STARTED |
@@ -421,11 +421,13 @@ All must be true:
 
 ## Active Module Reference
 
-**Module 1 authoritative doc:** `docs/modules/module-1-leads.md`
+**Current state:** Module 2 (Projects Core) completed and locked. Next module: Module 3 (Estimates & Sales Orders) — not started.
+
+**Module 2 authoritative doc:** `docs/modules/module-2-projects.md` (LOCKED)
+
+**Module 3 placeholder doc:** `docs/modules/module-3-estimates.md` (skeleton only; not started)
 
 All portion plans, decisions, next steps, deferred items, and current state live in the module-specific document. This intake doc only tracks module status and system-wide rules.
-
-**Module 1 Portion A status:** Lead creation flow now uses `createLeadWithPrimaryContact` end-to-end (DB writes + UI form complete). `leads.source` is required at the database level via migration `0007_leads_source_required.sql` (backfills NULLs to 'unknown', then sets NOT NULL).
 
 ---
 

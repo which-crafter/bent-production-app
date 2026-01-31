@@ -11,6 +11,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Project, LifecycleState } from "@/app/ops/types";
 
 interface ProjectsTableProps {
@@ -103,10 +104,20 @@ export function ProjectsTable({ projects }: ProjectsTableProps) {
                     className="hover:bg-zinc-50 dark:hover:bg-zinc-800"
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-black dark:text-zinc-50">
-                      {project.projectCode}
+                      <Link
+                        href={`/projects/${project.id}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {project.projectCode}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-black dark:text-zinc-50">
-                      {project.name}
+                      <Link
+                        href={`/projects/${project.id}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {project.name}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400">
                       {project.clientName || "—"}
