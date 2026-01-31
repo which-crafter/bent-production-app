@@ -581,6 +581,23 @@ This document can be persisted via the MCP `intake_put` tool, which writes to `.
 
 4. **Sequencing discipline (MANDATORY):** One queued task at a time; verify postback before next enqueue.
 
+### Canonical Task Execution Loop
+
+1. Assistant proposes a task (1–2 sentence summary + files to be touched).
+2. User explicitly approves or rejects the task.
+3. Only after approval may the assistant enqueue the task.
+4. After enqueue, assistant must provide two Cursor prompts:
+   - **RUN:** run the queued task
+   - **SKIP:** mark the queued task skipped
+5. User runs one of the prompts in Cursor.
+6. User tells assistant: "check postback".
+7. Assistant reviews postback and either:
+   - provides commit commands, or
+   - declares the task blocked/failed.
+8. No new task may be proposed until the previous task is either committed or explicitly rejected.
+
+**Additional rules:** All tasks must be broken into small pieces (preferably 1–2 files, single cohesive goal). No bundling of unrelated changes is allowed.
+
 ---
 
 ## How to Use This Document
