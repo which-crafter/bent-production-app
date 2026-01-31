@@ -15,3 +15,5 @@ create table if not exists public.estimate_versions (
   constraint estimate_versions_status_check check (status in ('draft', 'sent', 'approved', 'rejected')),
   constraint estimate_versions_estimate_version_unique unique (estimate_id, version_number)
 );
+
+create index if not exists estimate_versions_estimate_id_idx on public.estimate_versions (estimate_id);
