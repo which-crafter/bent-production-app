@@ -347,6 +347,12 @@ Plan approved and locked on 2026-01-31.
 Module 3 is **ACTIVE**. Implementation has begun.
 
 - Portion A — ACTIVE
+  - 0009_create_estimates.sql (estimates)
+  - 0010_create_estimate_versions.sql (estimate_versions; includes estimate_id index)
+  - 0011_create_estimate_settings_snapshots.sql
+  - 0012_create_labor_categories.sql (display_name NOT NULL)
+  - materials_catalog (queued / not yet completed)
+  - services_catalog (not started)
 - Portion B — NOT STARTED
 - Portion C — NOT STARTED
 - Portion D — NOT STARTED
@@ -358,8 +364,9 @@ Module 3 is **ACTIVE**. Implementation has begun.
 ## 8. Execution Checklist
 
 ### Portion A — Database Schema & Estimator Engine Core
-- [ ] Add migrations for: estimates, estimate_versions, estimate_settings_snapshots
-- [ ] Add migrations for: materials_catalog, services_catalog, labor_categories
+- [x] Add migrations for: estimates, estimate_versions, estimate_settings_snapshots
+- [x] Add migrations for: labor_categories
+- [ ] Add migrations for: materials_catalog, services_catalog
 - [ ] Add migrations for: estimate_line_items, estimate_components, estimate_version_totals
 - [ ] Add migrations for: payment_schedules, payment_schedule_items
 - [ ] Implement server actions for:
