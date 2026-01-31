@@ -598,6 +598,21 @@ This document can be persisted via the MCP `intake_put` tool, which writes to `.
 
 **Additional rules:** All tasks must be broken into small pieces (preferably 1–2 files, single cohesive goal). No bundling of unrelated changes is allowed.
 
+### Code Quality & Implementation Standards (MANDATORY)
+
+1. **All new code must be:**
+   - modular and composable
+   - broken into small focused functions
+   - organized by responsibility (no god files)
+
+2. **Naming rules:** Functions, variables, and files must be named by intent, not implementation detail.
+
+3. **Comments:** All non-obvious logic must include explanatory comments; business rules and edge cases must be commented.
+
+4. **File size / scope:** Prefer 1–2 files per task; large features must be decomposed into multiple tasks.
+
+5. **Prohibition:** No large monolithic implementations; no silent refactors; no bundled unrelated changes.
+
 ---
 
 ## How to Use This Document
