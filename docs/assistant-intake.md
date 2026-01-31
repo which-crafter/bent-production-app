@@ -351,7 +351,7 @@ Lifecycle states are strictly forward‑moving unless explicitly reopened.
 | 0 | Foundation | LOCKED |
 | 1 | Leads & Intake | LOCKED |
 | 2 | Projects Core | LOCKED |
-| 3 | Estimates & Sales Orders | NOT_STARTED |
+| 3 | Estimates & Sales Orders | ACTIVE |
 | 4 | Purchasing & Production Phases | NOT_STARTED |
 | 5 | Tasks & Time Tracking | NOT_STARTED |
 | 6 | Permissions & Multi‑User Safety | NOT_STARTED |
@@ -421,11 +421,11 @@ All must be true:
 
 ## Active Module Reference
 
-**Current state:** Module 2 (Projects Core) completed and locked. Next module: Module 3 (Estimates & Sales Orders) — not started.
+**Current state:** Module 2 (Projects Core) remains LOCKED. Module 3 (Estimates & Sales Orders) is now ACTIVE (plan locked; implementation beginning).
 
 **Module 2 authoritative doc:** `docs/modules/module-2-projects.md` (LOCKED)
 
-**Module 3 placeholder doc:** `docs/modules/module-3-estimates.md` (skeleton only; not started)
+**Module 3 authoritative doc:** `docs/modules/module-3-estimates.md` (plan LOCKED)
 
 All portion plans, decisions, next steps, deferred items, and current state live in the module-specific document. This intake doc only tracks module status and system-wide rules.
 

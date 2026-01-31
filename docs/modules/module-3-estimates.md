@@ -24,7 +24,7 @@ This module explicitly **does not**:
 
 ---
 
-## 2. Scope (Draft — Not Locked Until Approved)
+## 2. Scope (LOCKED)
 
 ### In Scope
 - Estimate container per project
@@ -283,9 +283,9 @@ Immutable snapshot of the chosen estimate version’s line items.
 
 ---
 
-## 5. Decisions Locked in This Module (Pending Approval)
+## 5. Decisions Locked in This Module (LOCKED)
 
-**NOTE:** These are the intended locked decisions for Module 3. They become LOCKED only after the product owner explicitly approves this module plan.
+Plan approved and locked on 2026-01-31.
 
 **LOCKED DECISIONS (verbatim intent, do not reinterpret):**
 1. Multiple drafts and unlimited estimate versions are allowed.
@@ -344,9 +344,9 @@ Immutable snapshot of the chosen estimate version’s line items.
 
 ## 7. Current State (as of today)
 
-Module 3 is currently **NOT_STARTED** (planning only). No implementation has begun.
+Module 3 is **ACTIVE**. Implementation has begun.
 
-- Portion A — NOT STARTED
+- Portion A — ACTIVE
 - Portion B — NOT STARTED
 - Portion C — NOT STARTED
 - Portion D — NOT STARTED
@@ -425,7 +425,7 @@ All must be true:
 
 ## 10. Module Lock
 
-**Status:** NOT LOCKED
+**Status:** NOT LOCKED (completion lock). The module plan is locked; execution is in progress.
 
 Module 3 is locked only after Portions A–F meet Exit Criteria and are browser-validated.
 
