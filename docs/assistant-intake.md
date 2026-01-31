@@ -60,15 +60,15 @@ If a prior decision creates friction, it must be **flagged**, not changed.
      ```
      Please run a Cursor export to document the current state of the repo.
      Use this prompt in Cursor:
-     
+
      "You are documenting the CURRENT STATE of the Bent Production App for the ACTIVE MODULE.
-     
+
      Output a SINGLE, COPY-PASTEABLE REPORT.
-     
+
      DO NOT suggest changes.
      DO NOT refactor.
      DO NOT speculate.
-     
+
      SECTIONS:
      1. Folder structure (tree view from /web)
      2. Database schema (tables, columns, constraints) for tables touched in the active module (as specified in the active module doc)
@@ -76,11 +76,11 @@ If a prior decision creates friction, it must be **flagged**, not changed.
      4. Server actions added/changed in the active module
      5. UI components added/changed for the active module
      6. Known limitations intentionally left open
-     
+
      If something does not exist, say: NOT PRESENT.
-     
+
      Output everything in one response."
-     
+
      Then paste the full output here.
      ```
 
@@ -122,15 +122,15 @@ If a prior decision creates friction, it must be **flagged**, not changed.
      ```
      Please run a Cursor export to document the current state of the repo.
      Use this prompt in Cursor:
-     
+
      "You are documenting the CURRENT STATE of the Bent Production App for the ACTIVE MODULE.
-     
+
      Output a SINGLE, COPY-PASTEABLE REPORT.
-     
+
      DO NOT suggest changes.
      DO NOT refactor.
      DO NOT speculate.
-     
+
      SECTIONS:
      1. Folder structure (tree view from /web)
      2. Database schema (tables, columns, constraints) for tables touched in the active module (as specified in the active module doc)
@@ -138,11 +138,11 @@ If a prior decision creates friction, it must be **flagged**, not changed.
      4. Server actions added/changed in the active module
      5. UI components added/changed for the active module
      6. Known limitations intentionally left open
-     
+
      If something does not exist, say: NOT PRESENT.
-     
+
      Output everything in one response."
-     
+
      Then paste the full output here.
      ```
 
@@ -425,7 +425,7 @@ All must be true:
 
 **Module 2 authoritative doc:** `docs/modules/module-2-projects.md` (LOCKED)
 
-**Module 3 placeholder doc:** `docs/modules/module-3-estimates.md` (skeleton only; not started)
+**Module 3 placeholder doc:** `docs/modules/module-3-estimates.md` (started)
 
 All portion plans, decisions, next steps, deferred items, and current state live in the module-specific document. This intake doc only tracks module status and system-wide rules.
 
@@ -477,15 +477,15 @@ Task‑level execution lists are ephemeral unless explicitly promoted.
      ```
      Please run a Cursor export to document the current state of the repo.
      Use this prompt in Cursor:
-     
+
      "You are documenting the CURRENT STATE of the Bent Production App for the ACTIVE MODULE.
-     
+
      Output a SINGLE, COPY-PASTEABLE REPORT.
-     
+
      DO NOT suggest changes.
      DO NOT refactor.
      DO NOT speculate.
-     
+
      SECTIONS:
      1. Folder structure (tree view from /web)
      2. Database schema (tables, columns, constraints) for tables touched in the active module (as specified in the active module doc)
@@ -493,11 +493,11 @@ Task‑level execution lists are ephemeral unless explicitly promoted.
      4. Server actions added/changed in the active module
      5. UI components added/changed for the active module
      6. Known limitations intentionally left open
-     
+
      If something does not exist, say: NOT PRESENT.
-     
+
      Output everything in one response."
-     
+
      Then paste the full output here.
      ```
 

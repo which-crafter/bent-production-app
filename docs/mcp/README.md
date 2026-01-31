@@ -4,6 +4,16 @@ Quick reference for starting, stopping, and troubleshooting the Bent MCP Queue s
 
 ---
 
+## Quick Start — New Chat (MCP)
+
+- **Restart servers if required.** See "Start / Stop / Verify" below.
+- **Cursor:** When bootstrapping or syncing intake, Cursor should call **`intake_put`** with the contents of `docs/assistant-intake.md` so the canonical intake is in `.mcp/bootstrap/intake.json`.
+- **New GPT chats:** A new ChatGPT session must call **`intake_get`** to load the canonical intake before doing work.
+- **Exact first message for a new GPT chat:**  
+  `Use MCP tool intake_get to load the canonical intake, then run CHAT AUTO-BOOTSTRAP.`
+
+---
+
 ## Start / Stop / Verify
 
 ### Start the MCP Server
@@ -73,6 +83,8 @@ If you see `./tools/mcp-queue-server/.mcp`, that's wrong — see "Common Failure
 
 ## What Tools Exist
 
+**Summary:** The MCP server exposes intake (bootstrap), queue (enqueue/dequeue/postback/latest), and debug (paths) tools. **Checklist:** (1) Server running and `.mcp` at repo root; (2) Cursor uses `intake_put` to sync intake; (3) New GPT chats use `intake_get` then the standard first message; (4) Cursor executes only after `queue_dequeue` and always calls `queue_postback`.
+
 The MCP server exposes these tools:
 
 ### Intake Tools
@@ -103,6 +115,18 @@ The MCP server exposes these tools:
    Should show: `"/home/shant/projects/bent-production-app/.mcp/bootstrap/intake.json"`
 
 **Important:** The `absolute_path` in the response confirms where the file was written. Always check this to ensure it's at the repo root, not under `tools/`.
+
+### Cursor Queue Execution Prompts
+
+Use these prompts so you never have to remember queue startup or execution steps.
+
+**A) Claim oldest queued task and execute.**
+
+> Claim the next task from the queue (use MCP `queue_dequeue`). Then execute the task per its body and post back with status and summary when done (use MCP `queue_postback`).
+
+**B) Claim oldest queued task and mark skipped (NO-OP).**
+
+> Claim the next task from the queue (use MCP `queue_dequeue`). Then post back immediately with status done and summary "Skipped per user request. No work performed." (use MCP `queue_postback`). Do not perform any work from the task body.
 
 ---
 
